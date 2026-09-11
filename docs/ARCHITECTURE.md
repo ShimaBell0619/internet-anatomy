@@ -21,9 +21,9 @@ Pure DNS transformation
         │    ├─ contextual alternatives
         │    └─ optional alias → canonical → address detour
         ├─ two-exploration DNS comparison model
-        └─ local Cache / TTL simulation seed
-             ↓
-        Pure local cache lifecycle model
+        ├─ local Cache / TTL simulation seed
+        │    ↓
+        │   Pure local cache lifecycle model
         └─ local Break DNS failure-model projection
 ```
 
