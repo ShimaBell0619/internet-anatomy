@@ -157,16 +157,16 @@ export function DnsStory({
       </div>
 
       <div className={`grid min-h-[96px] grid-cols-[150px_minmax(0,1fr)] items-center gap-[18px] border-t bg-[color:rgb(14_17_23_/_94%)] px-[18px] py-3 ${feedbackTone} max-[560px]:min-h-0 max-[560px]:grid-cols-1 max-[560px]:gap-1 max-[560px]:px-2.5 max-[560px]:py-2`} aria-live="polite" aria-atomic="true">
-        <div className={`font-mono text-[9px] tracking-[.1em] ${feedbackLabelTone} max-[560px]:text-[7px]`}>
+        <div className={`font-mono text-[9px] tracking-[.1em] ${feedbackLabelTone} max-[560px]:text-[8px]`}>
           {feedback?.kind === 'success' ? 'WHAT JUST HAPPENED' : feedback?.kind === 'hint' ? 'WHY NOT YET?' : 'TOUCH THE MODEL'}
         </div>
         <div className="min-w-0">
           {feedback ? (
             <>
               <strong className="mb-0.5 block text-[12px] font-semibold max-[560px]:text-[10px]">{feedback.title}</strong>
-              <p className="m-0 text-[10px] leading-[1.55] text-[var(--color-paper-200)] max-[560px]:text-[8px] max-[560px]:leading-[1.35]">{feedback.text}</p>
+              <p className="m-0 text-[10px] leading-[1.55] text-[var(--color-paper-200)] max-[560px]:text-[9px] max-[560px]:leading-[1.4]">{feedback.text}</p>
               {feedback.detail && (
-                <small className="mt-0.5 block font-mono text-[9px] leading-[1.45] text-[var(--color-paper-400)] max-[560px]:text-[7px]">
+                <small className="mt-0.5 block font-mono text-[9px] leading-[1.45] text-[var(--color-paper-400)] max-[560px]:text-[8px] max-[560px]:leading-[1.35]">
                   WHY NEXT · {feedback.detail}
                 </small>
               )}
@@ -174,7 +174,7 @@ export function DnsStory({
           ) : (
             <>
               <strong className="mb-0.5 block text-[12px] font-semibold max-[560px]:text-[10px]">見えているDNS actorを選んで進めます。</strong>
-              <p className="m-0 text-[10px] leading-[1.55] text-[var(--color-paper-200)] max-[560px]:text-[8px] max-[560px]:leading-[1.35]">
+              <p className="m-0 text-[10px] leading-[1.55] text-[var(--color-paper-200)] max-[560px]:text-[9px] max-[560px]:leading-[1.4]">
                 早すぎる相手を選んでも失敗にはしません。なぜ今そこへ行けないかを、この場所で説明します。
               </p>
             </>
@@ -227,7 +227,7 @@ function ActorIdentity({ actor, compact = false }: { actor: StoryActor; compact?
 
 function StoryDisclosure() {
   return (
-    <p className="m-0 border-t border-[color:rgb(40_48_60_/_65%)] bg-[color:rgb(9_11_15_/_88%)] px-[18px] py-1.5 font-mono text-[8px] leading-[1.45] text-[var(--color-paper-400)] max-[560px]:px-2.5 max-[560px]:py-1 max-[560px]:text-[6px]">
+    <p className="m-0 border-t border-[color:rgb(40_48_60_/_65%)] bg-[color:rgb(9_11_15_/_88%)] px-[18px] py-1.5 font-mono text-[8px] leading-[1.45] text-[var(--color-paper-400)] max-[560px]:px-2.5 max-[560px]:py-1 max-[560px]:text-[7px]">
       EXPLANATORY MODEL · Google Public DNSで観測したレコードから再構成。表示するhandoffは実パケットの捕捉や実測hopではありません。
     </p>
   );
