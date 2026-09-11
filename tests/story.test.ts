@@ -3,7 +3,7 @@ import test from 'node:test';
 import type { DnsExploration, NamespaceStage } from '../src/lib/dns.ts';
 import { buildDnsStory } from '../src/lib/story.ts';
 
-test('buildDnsStory explains resolver, root, TLD, authoritative answer, and return', () => {
+test('buildDnsStory maps each causal step to a directly selectable DNS actor', () => {
   const story = buildDnsStory(
     exploration([
       stage('.', 'root', ['a.root-servers.net.']),
@@ -25,13 +25,19 @@ test('buildDnsStory explains resolver, root, TLD, authoritative answer, and retu
       'resolver-to-client',
     ],
   );
+  assert.deepEqual(
+    story.map((step) => step.action.target.id),
+    ['resolver', 'stage-0', 'stage-1', 'stage-2', 'answer', 'client'],
+  );
+  assert.equal(story[0]?.action.source.id, 'client');
+  assert.equal(story[1]?.action.source.id, 'resolver');
+  assert.ok(story[1]?.action.alternatives.some((item) => item.actor.id === 'stage-1'));
+  assert.match(story[1]?.action.alternatives[0]?.explanation ?? '', /まずRoot/);
   assert.deepEqual(story[3]?.focus, { kind: 'stage', index: 2 });
   assert.deepEqual(story[4]?.focus, { kind: 'answer', index: 0 });
-  assert.match(story[1]?.learned ?? '', /Rootの仕事/);
-  assert.match(story[2]?.learned ?? '', /最終IPを直接管理するのではなく/);
 });
 
-test('buildDnsStory adds intermediate delegation steps without losing the final authoritative zone', () => {
+test('buildDnsStory adds directly selectable intermediate delegation steps', () => {
   const story = buildDnsStory(
     exploration([
       stage('.', 'root', ['a.root-servers.net.']),
@@ -43,12 +49,16 @@ test('buildDnsStory adds intermediate delegation steps without losing the final 
     ]),
   );
 
-  assert.ok(story.some((step) => step.id === 'delegation-2'));
+  const delegation = story.find((step) => step.id === 'delegation-2');
+  assert.equal(delegation?.action.target.id, 'stage-2');
+  assert.equal(delegation?.action.target.kind, 'stage');
+
   const authoritative = story.find((step) => step.id === 'authoritative-zone');
   assert.deepEqual(authoritative?.focus, { kind: 'stage', index: 3 });
+  assert.equal(authoritative?.action.target.id, 'stage-3');
 });
 
-test('buildDnsStory keeps NODATA explicit and does not invent an authoritative zone without observed delegation', () => {
+test('buildDnsStory keeps NODATA explicit without inventing an authoritative actor', () => {
   const story = buildDnsStory(
     exploration([
       stage('.', 'root', ['a.root-servers.net.']),
@@ -62,6 +72,9 @@ test('buildDnsStory keeps NODATA explicit and does not invent an authoritative z
   assert.match(answer?.title ?? '', /該当レコードなし/);
   assert.match(answer?.learned ?? '', /NXDOMAINとは別/);
   assert.deepEqual(answer?.focus, { kind: 'stage', index: 2 });
+  assert.equal(answer?.action.source.id, 'resolver');
+  assert.equal(answer?.action.target.id, 'answer');
+  assert.equal(answer?.action.target.name, 'NODATA');
 });
 
 function exploration(stages: NamespaceStage[], answerRecords: DnsExploration['answerRecords']): DnsExploration {
