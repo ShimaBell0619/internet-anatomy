@@ -61,7 +61,8 @@ export function DnsStory({
         <p className="mt-2 mb-0 text-[12px] leading-7 text-[var(--color-paper-200)]">{step.whyNext}</p>
       </section>
 
-      <div className="mt-8 grid grid-cols-3 gap-2" role="group" aria-label="Story controls">
+      <fieldset className="mt-8 grid grid-cols-3 gap-2 border-0 p-0">
+        <legend className="sr-only">Story controls</legend>
         <button
           type="button"
           className="min-h-11 border border-[var(--color-ink-700)] bg-transparent px-3 text-[12px] disabled:cursor-not-allowed disabled:opacity-35"
@@ -86,7 +87,7 @@ export function DnsStory({
         >
           次へ
         </button>
-      </div>
+      </fieldset>
 
       <p className="mt-6 mb-0 font-mono text-[10px] leading-5 text-[var(--color-paper-400)]">
         EXPLANATORY PLAYBACK · Google Public DNSで観測した情報から再構成。実際のパケット順序ではありません。
