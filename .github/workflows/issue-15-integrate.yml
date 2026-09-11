@@ -1,0 +1,27 @@
+name: Integrate Issue 15
+
+on:
+  push:
+    branches:
+      - release/issue-15-v1
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: release/issue-15-v1
+      - run: python3 .github/issue15_patch.py
+      - name: Commit v1 integration
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/App.tsx PRODUCT.md docs/ARCHITECTURE.md tests/e2e/rendered.spec.ts package.json package-lock.json
+          git commit -m "release: add shareable entry state and v1 metadata"
+          git push origin HEAD:release/issue-15-v1
