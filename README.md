@@ -6,7 +6,7 @@ The current surface focuses on DNS. Enter one or two hostnames and learn through
 
 - **Story** — the default interactive protocol theater. Directly activate each reachable DNS handoff and see what changed and why. If the observed answer contains CNAME, Story makes the alias → canonical-name detour explicit before the terminal address.
 - **Compare** — place two hostnames under the same DNS lens. See the shared namespace trunk, the first responsibility divergence, and each domain-specific branch.
-- **Lab** — change modeled DNS conditions and observe the consequence. Cache / TTL Lab uses observed TTL values as local simulation inputs to show when repeated lookups can stop at cache or must reopen part of the DNS path.
+- **Lab** — change modeled DNS conditions and observe the consequence. Cache / TTL shows how cached clues shorten later work; Break DNS safely models NODATA, NXDOMAIN, missing delegation, and finite CNAME loops without modifying real DNS.
 - **Explore** — inspect the observed DNS namespace, NS/SOA information, and final A / AAAA / CNAME answers directly.
 
 ## Current behavior
@@ -23,6 +23,7 @@ The current surface focuses on DNS. Enter one or two hostnames and learn through
 - Compares two current DNS explorations to show shared Root/TLD ancestry, the first divergence point, downstream delegation evidence, and final answers.
 - Simulates resolver caching locally: first lookup fills modeled answer/delegation cache, a valid answer cache collapses the next route to the Resolver, answer expiry can reuse delegation state, and delegation expiry reopens the full modeled path.
 - Shows original and remaining TTL values, simulated time, and the route required for the next modeled lookup.
+- Lets you break only the local DNS model to distinguish NODATA from NXDOMAIN, stop at a missing delegation, or create a finite CNAME loop and see where resolution can no longer advance.
 - Shows Root/TLD/namespace stages, observed NS/SOA data, and final A/AAAA/CNAME records with TTL in Explore.
 - Distinguishes NODATA, NXDOMAIN, DNS protocol failures, and transport errors.
 - Stores no query, comparison, or Lab history in the application.

@@ -78,10 +78,10 @@ Avoid generic dashboard composition. Internet Anatomy is an exploration/learning
 - Auto is a secondary watch mode. It may highlight the next actor, but manual Story must not reveal the answer solely through color or animation.
 - Compare must render from a pure comparison model derived from two current DNS explorations; UI layout must not decide shared ancestry or divergence semantics.
 - Cache / TTL Lab must render from a pure simulation model. UI controls alter modeled time/cache state; layout must not decide whether a lookup is a full resolution, delegation-cache hit, or answer-cache hit.
-- Lab controls are direct experiment controls (`query`, expire answer, expire delegation, reset), not quiz answers.
+- Lab controls are direct experiment controls, not quiz answers. Cache / TTL exposes query/expiry/reset actions; Break DNS exposes working/NODATA/NXDOMAIN/missing-delegation/CNAME-loop conditions as model mutations.
 - Shared/branch/interaction/simulation meaning must be textual as well as visual. Color and line placement may reinforce meaning but cannot be the only signal.
 - Specialist custom CSS is allowed only where the protocol-stage/rail/handoff/Lab route visualization materially benefits from it. Routine controls, responsive text, focus, disabled state, field grouping, and button behavior stay with semantic HTML/Tailwind or mature primitives.
-- Loading, error, active actor, explanatory feedback, shared, diverged, alias/canonical, cache-valid/cache-expired, empty/NODATA, and successful answer states must be explicit.
+- Loading, error, active actor, explanatory feedback, shared, diverged, alias/canonical, cache-valid/cache-expired, NODATA, NXDOMAIN, missing-delegation, finite-loop, and successful answer states must be explicit.
 
 ## Motion
 

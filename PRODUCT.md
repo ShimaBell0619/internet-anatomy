@@ -12,7 +12,7 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 - Primary job: enter a familiar hostname and use **Story** to manipulate a guided DNS responsibility model—see the current holder, directly activate the next reachable handoff, and receive immediate explanation of what changed and why.
 - Alias-learning job: when an observed answer contains CNAME, follow the name-to-name handoff until a canonical name owns the terminal A/AAAA answer, or until the observed chain ends/cycles.
 - Contrastive job: use **Compare** with exactly two hostnames to see which DNS layers are shared and the first point where responsibility diverges.
-- Experiment job: use **Lab** to change modeled DNS conditions and observe how resolution behavior changes. Cache / TTL Lab uses observed TTL values only as simulation seeds.
+- Experiment job: use **Lab** to change modeled DNS conditions and observe how resolution behavior changes. Cache / TTL uses observed TTL values only as simulation seeds; Break DNS changes only a local failure model.
 - Detail job: use **Explore** to inspect the observed namespace stages, NS/SOA data, and final answer records directly.
 
 ## 3. Core behaviors
@@ -36,6 +36,8 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 - Provide Cache / TTL Lab as an explicit local simulation seeded from the current exploration's observed TTL values.
 - In Cache / TTL Lab, a first lookup fills modeled answer and delegation cache entries; a repeated lookup with a valid answer entry stays at the Resolver; answer expiry with valid delegation reopens only downstream authoritative work; delegation expiry reopens the full Root / TLD path.
 - Let the learner advance simulated time by expiring answer or delegation entries directly. The Lab must show simulated time, modeled cache entries, original TTLs, remaining TTLs, and the route that would be needed for the next lookup.
+- Provide Break DNS in the same Lab surface. Let the learner switch a local model among working, NODATA, NXDOMAIN, missing-delegation, and finite CNAME-loop conditions and see exactly where the modeled path terminates or stops.
+- Break DNS must distinguish NODATA (name exists but requested data is absent) from NXDOMAIN (name itself does not exist), and must never mutate or claim to mutate real DNS.
 - Keep Explore available for direct inspection of the DNS namespace from `.` through successively more specific names and observed delegation points.
 - Show A, AAAA, CNAME, NS, and SOA data when available, including TTL.
 - Explain selected stages and records in Japanese without requiring prior DNS terminology.
@@ -81,6 +83,8 @@ An alias chain is supported only when it starts from the queried hostname and ca
 A Compare branch must be derived independently from each current `DnsExploration`. Shared ancestry is based on equal namespace stages from Root downward; downstream delegation evidence may be absent and must remain visibly absent rather than inferred.
 
 A Cache / TTL Lab state transition must be produced by pure local simulation logic. The initial TTL seeds may come from the current exploration, but lookup kind, remaining TTL, cache fill, and expiry must not depend on React layout or additional network requests.
+
+A Break DNS state must also be produced by pure local simulation logic. Working, NODATA, NXDOMAIN, missing delegation, and CNAME-loop outcomes are teaching models only; they perform no additional DNS request and never modify external DNS. Loop projections must stop finitely.
 
 ## 7. Evolution rules
 

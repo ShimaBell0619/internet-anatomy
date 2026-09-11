@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DnsCacheLab } from './components/DnsCacheLab';
+import { DnsLab, type LabSection } from './components/DnsLab';
 import { DnsCompare, DnsCompareQuery } from './components/DnsCompare';
 import { DnsInspector } from './components/DnsInspector';
 import { DnsPath, recordKey, type ExplorerSelection } from './components/DnsPath';
@@ -27,6 +27,7 @@ export function App() {
   const [comparison, setComparison] = useState<DnsComparison | null>(null);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState<string | null>(null);
+  const [labSection, setLabSection] = useState<LabSection>('cache');
   const controllerRef = useRef<AbortController | null>(null);
   const compareControllerRef = useRef<AbortController | null>(null);
   const story = useMemo(() => (exploration ? buildDnsStory(exploration) : []), [exploration]);
@@ -246,9 +247,9 @@ export function App() {
               <h1 id="page-title">
                 {mode === 'lab' ? (
                   <>
-                    <span className="max-[560px]:block">TTLを進めると、</span>
-                    <span className="max-[560px]:block">必要な経路が</span>
-                    <span className="max-[560px]:block">変わっていく。</span>
+                    <span className="max-[560px]:block">条件を変えると、</span>
+                    <span className="max-[560px]:block">DNSの経路と</span>
+                    <span className="max-[560px]:block">失敗が見えてくる。</span>
                   </>
                 ) : (
                   <>
@@ -262,7 +263,7 @@ export function App() {
                 {mode === 'compare'
                   ? '2つの名前を同じDNS階層に重ねると、どこまで責任を共有し、どの委任から別々になるのかが見えてきます。'
                   : mode === 'lab'
-                    ? '観測したTTLを種にしたローカルシミュレーションで、再問い合わせがcacheによりどこまで短縮されるかを動かして確かめます。'
+                    ? 'Cache / TTLとBreak DNSのローカルシミュレーションで、同じDNS模型の条件を変え、経路が短縮・停止・ループする理由を確かめます。'
                     : '実際のDNSレコードと名前空間を直接選び、NS / SOA / Answerの詳細を掘り下げます。'}
               </p>
             </div>
@@ -284,7 +285,7 @@ export function App() {
               <span>{mode === 'compare'
                 ? 'Compareは2つの観測結果を同じDNS名前空間に投影した学習モデルです。'
                 : mode === 'lab'
-                  ? 'Labは観測したTTLを初期値にしたローカルシミュレーションです。実Resolver cacheの観測ではありません。'
+                  ? 'Labはローカルシミュレーションです。実DNSの変更、実Resolver cacheの観測、実packet traceではありません。'
                   : 'Exploreは観測したレコードを表示し、名前空間の階層は観測結果から再構成します。'}</span>
             </div>
           </section>
@@ -314,9 +315,11 @@ export function App() {
           ) : mode === 'lab' ? (
             <section aria-busy={loading}>
               {loading && <LoadingState />}
-              {!loading && exploration && <DnsCacheLab exploration={exploration} />}
+              {!loading && exploration && (
+                <DnsLab exploration={exploration} section={labSection} onSectionChange={setLabSection} />
+              )}
               {!loading && !exploration && !error && (
-                <p className="empty-state p-8">ドメインを探索してCache / TTL Labを開始してください。</p>
+                <p className="empty-state p-8">ドメインを探索してDNS Labを開始してください。</p>
               )}
             </section>
           ) : (
