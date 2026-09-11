@@ -7,27 +7,29 @@ import { DnsStory, type StoryFeedback } from './components/DnsStory';
 import { QueryBar } from './components/QueryBar';
 import { buildDnsComparison, type DnsComparison } from './lib/compare.ts';
 import { exploreDns, type DnsExploration } from './lib/dns';
+import { parseShareState, serializeShareState, type ShareMode } from './lib/shareState.ts';
 import { buildDnsStory, type DnsStoryStep, type StoryActor } from './lib/story.ts';
 
-type WorkspaceMode = 'story' | 'compare' | 'lab' | 'explore';
+type WorkspaceMode = ShareMode;
 
 export function App() {
-  const [query, setQuery] = useState('google.com');
+  const initialShareState = useMemo(() => parseShareState(window.location.search), []);
+  const [query, setQuery] = useState(initialShareState.host);
   const [exploration, setExploration] = useState<DnsExploration | null>(null);
   const [selection, setSelection] = useState<ExplorerSelection>({ kind: 'stage', index: 0 });
-  const [mode, setMode] = useState<WorkspaceMode>('story');
+  const [mode, setMode] = useState<WorkspaceMode>(initialShareState.mode);
   const [storyIndex, setStoryIndex] = useState(0);
   const [storyComplete, setStoryComplete] = useState(false);
   const [storyFeedback, setStoryFeedback] = useState<StoryFeedback | null>(null);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [compareLeft, setCompareLeft] = useState('google.com');
-  const [compareRight, setCompareRight] = useState('github.com');
+  const [compareLeft, setCompareLeft] = useState(initialShareState.left);
+  const [compareRight, setCompareRight] = useState(initialShareState.right);
   const [comparison, setComparison] = useState<DnsComparison | null>(null);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState<string | null>(null);
-  const [labSection, setLabSection] = useState<LabSection>('cache');
+  const [labSection, setLabSection] = useState<LabSection>(initialShareState.lab);
   const controllerRef = useRef<AbortController | null>(null);
   const compareControllerRef = useRef<AbortController | null>(null);
   const story = useMemo(() => (exploration ? buildDnsStory(exploration) : []), [exploration]);
@@ -89,12 +91,42 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    void runExploration('google.com');
+    if (initialShareState.mode === 'compare') {
+      void runComparison(initialShareState.left, initialShareState.right);
+    } else {
+      void runExploration(initialShareState.host);
+    }
+
     return () => {
       controllerRef.current?.abort();
       compareControllerRef.current?.abort();
     };
-  }, [runExploration]);
+  }, [initialShareState, runComparison, runExploration]);
+
+  useEffect(() => {
+    if (mode === 'compare') {
+      if (!comparison) return;
+      const search = serializeShareState({
+        mode,
+        host: initialShareState.host,
+        left: comparison.left.hostname,
+        right: comparison.right.hostname,
+        lab: labSection,
+      });
+      window.history.replaceState(null, '', `${window.location.pathname}${search}${window.location.hash}`);
+      return;
+    }
+
+    if (!exploration) return;
+    const search = serializeShareState({
+      mode,
+      host: exploration.hostname,
+      left: compareLeft,
+      right: compareRight,
+      lab: labSection,
+    });
+    window.history.replaceState(null, '', `${window.location.pathname}${search}${window.location.hash}`);
+  }, [compareLeft, compareRight, comparison, exploration, initialShareState.host, labSection, mode]);
 
   const syncExploreSelection = useCallback((step: DnsStoryStep) => {
     if (!exploration) return;
@@ -163,14 +195,23 @@ export function App() {
     else setCompareRight(value);
   };
 
-  const enterStory = () => setMode('story');
+  const ensureSingleExploration = () => {
+    if (!exploration && !loading) void runExploration(query);
+  };
+  const enterStory = () => {
+    setMode('story');
+    setPlaying(false);
+    ensureSingleExploration();
+  };
   const enterLab = () => {
     setMode('lab');
     setPlaying(false);
+    ensureSingleExploration();
   };
   const enterExplore = () => {
     setMode('explore');
     setPlaying(false);
+    ensureSingleExploration();
   };
   const backStory = () => {
     setPlaying(false);
@@ -391,7 +432,7 @@ function LearningModeNav({
     <nav className={compact ? 'grid grid-cols-4 gap-1.5' : 'mb-3 grid grid-cols-4 gap-2'} aria-label="DNS learning mode">
       <ModeButton active={mode === 'story'} title="Story" description="触って因果を理解" onClick={onStory} />
       <ModeButton active={mode === 'compare'} title="Compare" description="責任の分岐を比較" onClick={onCompare} />
-      <ModeButton active={mode === 'lab'} title="Lab" description="TTLを時間で動かす" onClick={onLab} />
+      <ModeButton active={mode === 'lab'} title="Lab" description="cacheと失敗を実験" onClick={onLab} />
       <ModeButton active={mode === 'explore'} title="Explore" description="実データを掘る" onClick={onExplore} />
     </nav>
   );

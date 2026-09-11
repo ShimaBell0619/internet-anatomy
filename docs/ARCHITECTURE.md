@@ -59,6 +59,7 @@ Story actor choices, handoff arrows, CNAME rails, and Lab route rails are explan
 ## Responsibility boundaries
 
 - `src/lib/domain.ts`: input normalization and DNS namespace decomposition. No UI state or network I/O.
+- `src/lib/shareState.ts`: pure parsing/serialization of shareable entry state. Hostnames are validated through `normalizeHostname`; malformed URL state falls back to product defaults and never initiates a query with an unvalidated hostname.
 - `src/lib/dns.ts`: Google DoH boundary and transformation into the observed product DNS model. Preserves Answer record owner/type/TTL/data.
 - `src/lib/alias.ts`: pure derivation of observed CNAME owner → target chains, terminal owner-matched A/AAAA records, missing-terminal outcomes, and cycle protection. No network I/O or React state.
 - `src/lib/story.ts`: pure derivation of explanatory Story steps, direct-interaction targets, contextual alternatives, and optional alias/canonical Story semantics from one `DnsExploration`; no network I/O or React state.
@@ -70,7 +71,7 @@ Story actor choices, handoff arrows, CNAME rails, and Lab route rails are explan
 - `src/components/DnsCompare.tsx`: Compare query controls and comparison presentation; it consumes comparison semantics rather than deriving them.
 - `src/components/DnsCacheLab.tsx`: Cache / TTL simulation controls and route/cache-state presentation; it consumes `cacheLab.ts` transitions rather than inferring cache behavior from layout.
 - `src/components/DnsPath.tsx` / `DnsInspector.tsx`: Explore path visualization and direct record/stage inspection.
-- `src/App.tsx`: request lifecycle, cancellation, learning-mode state, Story interaction/feedback state, local Auto scheduling, optional CNAME sample entry action, Compare request coordination, Lab composition, Explore selection synchronization, and page composition.
+- `src/App.tsx`: request lifecycle, cancellation, learning-mode state, Story interaction/feedback state, local Auto scheduling, optional CNAME sample entry action, Compare request coordination, Lab composition, Explore selection synchronization, share-URL synchronization via `history.replaceState`, and page composition.
 
 Do not add a generic repository/service layer while there is only one real integration and a small number of direct learning projections.
 
