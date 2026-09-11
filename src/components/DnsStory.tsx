@@ -73,7 +73,6 @@ export function DnsStory({
     );
   }
 
-  const choices = orderChoices(step);
   const feedbackTone = feedback?.kind === 'success'
     ? 'border-t-[color:rgb(130_233_208_/_42%)]'
     : feedback?.kind === 'hint'
@@ -134,27 +133,25 @@ export function DnsStory({
       </header>
 
       <div className="story-stage" data-alias={step.visual?.kind === 'alias' ? 'true' : 'false'} aria-describedby="story-question">
-        <ActorSource actor={step.action.source} hostname={hostname} />
+        <ActorSource key={step.action.source.id} actor={step.action.source} hostname={hostname} />
 
-        <div className="story-handoff" aria-hidden="true">
+        <div key={`handoff-${step.id}`} className="story-handoff" aria-hidden="true">
           <span>{step.visual?.kind === 'alias' ? 'CNAME' : 'HANDOFF'}</span>
           <i />
         </div>
 
         <div className="min-w-0">
           <p className="mb-2 font-mono text-[9px] tracking-[.1em] text-[var(--color-paper-400)] max-[560px]:mb-1 max-[560px]:text-[7px]">
-            次に到達できる相手は？
+            次のhandoffを起こす
           </p>
           <fieldset className="story-target-grid m-0 border-0 p-0">
             <legend className="sr-only">次に質問または答えを渡す相手</legend>
-            {choices.map((choice) => (
-              <ActorButton
-                key={choice.actor.id}
-                actor={choice.actor}
-                guided={playing && choice.actor.id === step.action.target.id}
-                onClick={() => onSelectActor(choice.actor.id)}
-              />
-            ))}
+            <ActorButton
+              key={step.action.target.id}
+              actor={step.action.target}
+              guided={playing}
+              onClick={() => onSelectActor(step.action.target.id)}
+            />
           </fieldset>
         </div>
 
@@ -163,7 +160,7 @@ export function DnsStory({
 
       <div className={`grid min-h-[96px] grid-cols-[150px_minmax(0,1fr)] items-center gap-[18px] border-t bg-[color:rgb(14_17_23_/_94%)] px-[18px] py-3 ${feedbackTone} max-[560px]:min-h-0 max-[560px]:grid-cols-1 max-[560px]:gap-1 max-[560px]:px-2.5 max-[560px]:py-2`} aria-live="polite" aria-atomic="true">
         <div className={`font-mono text-[9px] tracking-[.1em] ${feedbackLabelTone} max-[560px]:text-[8px]`}>
-          {feedback?.kind === 'success' ? 'WHAT JUST HAPPENED' : feedback?.kind === 'hint' ? 'WHY NOT YET?' : 'TOUCH THE MODEL'}
+          {feedback?.kind === 'success' ? 'WHAT JUST HAPPENED' : feedback?.kind === 'hint' ? 'WHY NOT YET?' : 'TOUCH TO HAND OFF'}
         </div>
         <div className="min-w-0">
           {feedback ? (
@@ -179,9 +176,9 @@ export function DnsStory({
           ) : (
             <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1">
               <div className="min-w-0">
-                <strong className="mb-0.5 block text-[12px] font-semibold max-[560px]:text-[10px]">見えているDNS actorを選んで進めます。</strong>
+                <strong className="mb-0.5 block text-[12px] font-semibold max-[560px]:text-[10px]">見えている次のactorを触って、handoffを起こします。</strong>
                 <p className="m-0 text-[10px] leading-[1.55] text-[var(--color-paper-200)] max-[560px]:text-[9px] max-[560px]:leading-[1.4]">
-                  早すぎる相手を選んでも失敗にはしません。なぜ今そこへ行けないかを、この場所で説明します。
+                  触るたびに責任のバトンが次のactorへ移り、何が分かったかを同じ舞台で確認できます。
                 </p>
               </div>
               {hostname !== 'www.github.com' && (
@@ -280,17 +277,6 @@ function StoryDisclosure() {
       EXPLANATORY MODEL · Google Public DNSで観測したレコードから再構成。CNAME chainもAnswerのowner/RDATAから組み立てた論理関係で、実パケットの捕捉や実測hopではありません。
     </p>
   );
-}
-
-function orderChoices(step: DnsStoryStep): Array<{ actor: StoryActor }> {
-  const alternatives = step.action.alternatives.map((item) => ({ actor: item.actor }));
-  const target = { actor: step.action.target };
-  const first = alternatives[0];
-  const second = alternatives[1];
-
-  if (first && second) return [first, target, second];
-  if (first) return [target, first];
-  return [target];
 }
 
 function extractHostname(steps: DnsStoryStep[]): string {
