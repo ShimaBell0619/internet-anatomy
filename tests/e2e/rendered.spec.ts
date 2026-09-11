@@ -38,32 +38,42 @@ test.beforeEach(async ({ page }) => {
   await mockDns(page);
 });
 
-test('Story advances by touching DNS actors and explains an early choice without punishment', async ({ page }) => {
+test('Story advances by directly activating the next protocol handoff', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
 
   await expect(page.getByRole('button', { name: /Story/ })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('heading', { name: '最初に質問を渡す相手を選ぶ' })).toBeVisible();
-  await expect(page.getByText('次に到達できる相手は？')).toBeVisible();
+  await expect(page.getByText('次のhandoffを起こす')).toBeVisible();
+  await expect(page.getByRole('button', { name: /RECURSIVE RESOLVER Resolver/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^ROOT / })).toHaveCount(0);
   expect(await hasPageVerticalScroll(page)).toBe(false);
-
-  await page.getByRole('button', { name: /^ROOT / }).click();
-  await expect(page.getByText('WHY NOT YET?')).toBeVisible();
-  await expect(page.getByText(/通常はRecursive Resolver/)).toBeVisible();
-  await expect(page.getByRole('heading', { name: '最初に質問を渡す相手を選ぶ' })).toBeVisible();
 
   await page.getByRole('button', { name: /RECURSIVE RESOLVER Resolver/ }).click();
   await expect(page.getByRole('heading', { name: 'Resolverが次に頼るDNSを選ぶ' })).toBeVisible();
   await expect(page.getByText('WHAT JUST HAPPENED')).toBeVisible();
   await expect(page.getByText(/端末は通常、設定されたRecursive Resolver/)).toBeVisible();
-
-  await page.getByRole('button', { name: /^TLD com\./ }).click();
-  await expect(page.getByText(/まずRootから案内/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /^ROOT / })).toBeVisible();
 
   await page.getByRole('button', { name: /^ROOT / }).click();
   await expect(page.getByRole('heading', { name: 'Rootの案内を使って次へ進む' })).toBeVisible();
   await expect(page.getByText(/Rootは個々のサイトのIPを全部持つ場所ではなく/)).toBeVisible();
   expect(await hasPageVerticalScroll(page)).toBe(false);
+});
+
+test('Story preserves semantic handoff with reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+
+  const source = page.getByLabel(/現在の役割: CLIENT Your device/);
+  await expect(source).toBeVisible();
+  expect(await source.evaluate((element) => getComputedStyle(element).animationName)).toBe('none');
+
+  await page.getByRole('button', { name: /RECURSIVE RESOLVER Resolver/ }).click();
+  await expect(page.getByRole('heading', { name: 'Resolverが次に頼るDNSを選ぶ' })).toBeVisible();
+  await expect(page.getByText('WHAT JUST HAPPENED')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^ROOT / })).toBeVisible();
 });
 
 test('CNAME example becomes a visible name-to-name detour before the canonical address', async ({ page }) => {
@@ -124,7 +134,7 @@ for (const [width, height] of [[390, 844], [320, 800]] as const) {
 
     await expect(page.getByRole('heading', { name: '最初に質問を渡す相手を選ぶ' })).toBeVisible();
     await expect(page.getByRole('button', { name: /RECURSIVE RESOLVER Resolver/ })).toBeVisible();
-    await expect(page.getByText('TOUCH THE MODEL')).toBeVisible();
+    await expect(page.getByText('TOUCH TO HAND OFF')).toBeVisible();
     expect(await hasHorizontalOverflow(page)).toBe(false);
     expect(await hasPageVerticalScroll(page)).toBe(false);
 

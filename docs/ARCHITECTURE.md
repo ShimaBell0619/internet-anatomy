@@ -66,16 +66,16 @@ Do not add a generic repository/service layer while there is only one real integ
 ## Story interaction model
 
 - Story is a mostly viewport-fixed teaching stage. It deliberately omits raw-detail surfaces that belong in Explore so the current question, actors, and feedback can remain in one context.
-- The pure Story step names the `source`, correct `target`, and meaningful `alternatives`. The UI presents these as visible native buttons; click, touch, and keyboard use the same state transition.
-- Selecting the target produces immediate success feedback from the current step and advances the active responsibility question.
-- Selecting a premature alternative leaves the step unchanged, stops Auto if necessary, and explains why that responsibility boundary is not yet reachable. This is guidance, not a scored wrong answer.
+- The pure Story step names the `source`, reachable `target`, and meaningful contextual `alternatives`. The default UI presents the target as the direct-manipulation control; alternatives stay available to the domain model but are not rendered as a multiple-choice correctness loop. Click, touch, and keyboard use the same state transition.
+- Activating the target produces immediate feedback from the current step and advances the active responsibility question.
 - When an alias chain exists, Story inserts explicit name-to-name actors before the terminal address step. Alias/CNAME/canonical/address ownership comes from the pure alias/story model, not the React layout.
 - The CNAME rail is a compact explanatory projection of already observed Answer records. It must not trigger hidden network requests or imply packet chronology.
 - Back is supporting navigation. It does not replace the actor-selection interaction.
 - Auto uses a local timeout to choose the declared target. Its duration is presentation timing only and must not be labeled as DNS latency.
 - Story feedback may remain visible while the next question becomes active so cause/result continuity is preserved without another Continue/Next action.
-- Existing focus-visible treatment and semantic buttons/fieldset provide keyboard semantics. Specialist Story CSS is limited to the protocol-stage composition, actor nodes, baton/handoff geometry, alias rail, and fixed viewport behavior.
-- Reduced-motion styling removes nonessential actor transition effects; no synthetic packet animation is introduced.
+- Existing focus-visible treatment and semantic buttons/fieldset provide keyboard semantics. Specialist Story CSS is limited to the protocol-stage composition, actor nodes, baton/handoff geometry, alias rail, fixed viewport behavior, and semantic state-transition motion.
+- Story motion is presentation-only and does not alter domain timing: short transform/opacity/rail reveals orient the learner after a state change and never delay the state transition or imply packet latency.
+- Reduced-motion styling removes those spatial transitions while preserving identical actor, feedback, and Story state; no synthetic packet animation is introduced.
 
 ## Compare model
 

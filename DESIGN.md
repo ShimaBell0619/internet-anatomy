@@ -66,9 +66,9 @@ Avoid generic dashboard composition. Internet Anatomy is an exploration/learning
 
 - Native input/button/fieldset semantics are sufficient for current controls; do not add a primitive dependency until behavior requires it.
 - Product semantic components own Query Bar, DNS Path, Story Theater/Actor/Alias Trail, Compare, Answer Record, and Inspector behavior.
-- Story interaction semantics come from the pure Story model: current holder, correct next actor, meaningful premature alternatives, and any observed alias-chain projection. Layout must not decide what is “correct.”
-- A correct actor selection advances the responsibility model and leaves concise **WHAT JUST HAPPENED / WHY NEXT** feedback in the same scene context.
-- A premature actor selection does not create an error state; it keeps the scene in place and explains **WHY NOT YET?**.
+- Story interaction semantics come from the pure Story model: current holder, reachable target, contextual alternatives, and any observed alias-chain projection. Layout must not decide the next actor; the default Story UI exposes the reachable target directly instead of rendering alternatives as a correctness test.
+- Activating the visible target advances the responsibility model and leaves concise **WHAT JUST HAPPENED / WHY NEXT** feedback in the same scene context.
+- Story progression is not a quiz. The learner should not need to choose among plausible-but-unreachable actors to prove knowledge before seeing the protocol change.
 - CNAME progression treats the alias name and canonical name as distinct selectable actors. A canonical A/AAAA address is presented as owned by the canonical record name, never visually reassigned to the original alias.
 - Alias-chain cycles and missing terminal addresses are explicit labeled outcomes, not generic errors or inferred addresses.
 - Auto is a secondary watch mode. It may highlight the next actor, but manual Story must not reveal the answer solely through color or animation.
@@ -80,8 +80,8 @@ Avoid generic dashboard composition. Internet Anatomy is an exploration/learning
 ## Motion
 
 - Auto advances discrete explanatory Story scenes using local UI time only; it is not DNS latency.
-- Manual interaction should use immediate state change and at most short orientation transitions. The learner should never wait for decorative animation before acting again.
-- The memorable CNAME moment comes from the information structure changing from name → name → address, not from elaborate animation.
+- Manual interaction uses immediate state change plus short semantic orientation transitions: source emphasis arrives, the handoff rail reveals, the reachable target appears, and an active CNAME rail item may reveal. These transitions should remain roughly sub-300ms and must never block the next action.
+- The memorable CNAME moment comes from the information structure changing from name → name → address, reinforced by a brief reveal rather than elaborate animation.
 - `prefers-reduced-motion` must remove nonessential actor/focus transitions.
 - Do not animate fabricated packets between DNS servers or CNAME targets. Handoff lines/arrows describe explanatory relationships, not observed traffic.
 
@@ -91,7 +91,7 @@ Avoid generic dashboard composition. Internet Anatomy is an exploration/learning
 
 - Keep Story question, manipulated actors, and resulting explanation in one visual context.
 - Let protocol semantics drive navigation when a visible DNS actor can represent the next action accessibly.
-- Explain early choices with causal language instead of “wrong answer” language.
+- Make the reachable handoff target explicit enough to manipulate directly; learning comes from causing and observing the state change, not from guessing a correct option.
 - Make the current holder and selectable actors distinguishable through labels, structure, focus, and text—not color alone.
 - Make a CNAME turn memorable by clearly showing **alias name → CNAME → canonical name → A/AAAA**, with record ownership intact.
 - In Compare, expose the shared prefix before differences and emphasize the first responsibility boundary.

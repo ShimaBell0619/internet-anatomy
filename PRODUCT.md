@@ -9,7 +9,7 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 ## 2. Users and primary jobs
 
 - Learners and engineers who want to understand DNS by observing real domains instead of reading only static diagrams.
-- Primary job: enter a familiar hostname and use **Story** to manipulate a guided DNS responsibility model—see the current holder, choose the next reachable actor, and receive immediate explanation of what happened and why.
+- Primary job: enter a familiar hostname and use **Story** to manipulate a guided DNS responsibility model—see the current holder, directly activate the next reachable handoff, and receive immediate explanation of what changed and why.
 - Alias-learning job: when an observed answer contains CNAME, follow the name-to-name handoff until a canonical name owns the terminal A/AAAA answer, or until the observed chain ends/cycles.
 - Contrastive job: use **Compare** with exactly two hostnames to see which DNS layers are shared and the first point where responsibility diverges.
 - Detail job: use **Explore** to inspect the observed namespace stages, NS/SOA data, and final answer records directly.
@@ -20,9 +20,9 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 - Query real public DNS data and distinguish observed data from explanatory reconstruction.
 - Default to a guided DNS Resolution Story derived from the current exploration result.
 - Present Story as a mostly viewport-fixed protocol theater: the current question, current holder, reachable DNS actors, and immediate feedback stay in one visual context instead of requiring normal page scrolling.
-- Advance Story primarily by selecting the meaningful next DNS actor/action. Generic pagination is not the primary progression mechanism.
-- Explain premature/early selections non-punitively: tell the learner why that actor is not reachable yet instead of scoring the choice as a failure.
-- After a correct selection, reveal concise **WHAT JUST HAPPENED** and **WHY NEXT** feedback while moving the active question to the next responsibility handoff.
+- Advance Story primarily by directly activating the currently reachable DNS actor/action. Generic pagination and multiple-choice correctness loops are not the primary progression mechanism.
+- Do not make the learner guess the next actor to earn progress. Plausible alternatives may remain domain-model context, but the default Story UI exposes the current reachable target as direct manipulation.
+- After activation, reveal concise **WHAT JUST HAPPENED** and **WHY NEXT** feedback while moving the active question to the next responsibility handoff.
 - Provide Back as supporting navigation and Auto as a secondary watch mode. Auto uses local UI timing only and must not imply measured DNS latency.
 - Keep Story intentionally selective; detailed NS/SOA/record inspection belongs to Explore.
 - Explain the roles of the client, Recursive Resolver, Root, TLD, observed delegation/authoritative zone, final answer, and return to the client.
@@ -50,7 +50,7 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 - A failed comparison must never present one new result beside one stale result as if both belong to the same comparison.
 - Story should fit its normal scene within approximately one viewport at the rendered-review desktop/mobile baselines; Compare and Explore may scroll when their information density requires it.
 - Story, Compare, and Explore must remain keyboard reachable and usable at approximately 1440px, 390px, and 320px widths without horizontal overflow.
-- Meaningful state must remain understandable without color alone; motion must respect reduced-motion behavior.
+- Meaningful state must remain understandable without color alone; motion must respect reduced-motion behavior. Semantic Story motion must be short, non-blocking, and optional: source emphasis, handoff reveal, target arrival, and alias reveal may animate only to clarify what changed.
 
 ## 5. Non-goals
 
@@ -68,7 +68,7 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 
 A DNS capability is supported only when its semantics are documented, representative success and failure transformations are tested, the rendered flow is validated at desktop/mobile/narrow widths, and observed versus reconstructed information is not visually or textually conflated.
 
-A Story step must be derived from current observed data or from a clearly labeled general DNS role. Its selectable target and premature alternatives are pure domain semantics; the presentation must not infer the next actor from layout position. Missing delegation evidence must not be replaced with an invented authoritative zone.
+A Story step must be derived from current observed data or from a clearly labeled general DNS role. Its selectable target and contextual alternatives are pure domain semantics; the presentation must not infer the next actor from layout position or turn those alternatives into a quiz by default. Missing delegation evidence must not be replaced with an invented authoritative zone.
 
 An alias chain is supported only when it starts from the queried hostname and can be derived from observed CNAME owner → RDATA relationships. Terminal A/AAAA records are matched by their observed owner name. Multiple hops must remain finite; cycles and missing terminal addresses remain explicit outcomes rather than inferred success.
 
