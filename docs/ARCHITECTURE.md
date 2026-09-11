@@ -21,9 +21,10 @@ Pure DNS transformation
         │    ├─ contextual alternatives
         │    └─ optional alias → canonical → address detour
         ├─ two-exploration DNS comparison model
-        └─ local Cache / TTL simulation seed
-             ↓
-        Pure local cache lifecycle model
+        ├─ local Cache / TTL simulation seed
+        │    ↓
+        │   Pure local cache lifecycle model
+        └─ local Break DNS failure-model projection
 ```
 
 ## DNS observation boundary
@@ -63,6 +64,8 @@ Story actor choices, handoff arrows, CNAME rails, and Lab route rails are explan
 - `src/lib/story.ts`: pure derivation of explanatory Story steps, direct-interaction targets, contextual alternatives, and optional alias/canonical Story semantics from one `DnsExploration`; no network I/O or React state.
 - `src/lib/compare.ts`: pure derivation of shared ancestry, divergence semantics, and two branches from two `DnsExploration` values; no network I/O or React state.
 - `src/lib/cacheLab.ts`: pure derivation of Cache / TTL Lab seed and local lifecycle transitions; no network I/O or React state.
+- `src/lib/failureLab.ts`: pure derivation of working/NODATA/NXDOMAIN/missing-delegation/CNAME-loop teaching states. It performs no network I/O and loops terminate finitely.
+- `src/components/DnsLab.tsx` / `DnsFailureLab.tsx`: Lab experiment switch and Break DNS presentation; UI consumes pure model output rather than deriving failure semantics from layout.
 - `src/components/DnsStory.tsx`: fixed protocol-theater presentation. It renders actor/alias semantics supplied by `story.ts`, uses native controls/fieldset semantics, and does not decide the next actor or record ownership from position/styling.
 - `src/components/DnsCompare.tsx`: Compare query controls and comparison presentation; it consumes comparison semantics rather than deriving them.
 - `src/components/DnsCacheLab.tsx`: Cache / TTL simulation controls and route/cache-state presentation; it consumes `cacheLab.ts` transitions rather than inferring cache behavior from layout.
@@ -103,6 +106,12 @@ Do not add a generic repository/service layer while there is only one real integ
 - When delegation also expires, the next modeled lookup returns to `full-resolution` and both modeled layers refresh.
 - Expiry controls advance the local simulation clock just past the relevant expiry boundary. They do not wait in real time and do not mutate external resolver state.
 - Reduced-motion removes route reveal transitions but preserves the same route nodes, cache text, remaining TTL values, and controls.
+
+## Break DNS Lab model
+
+- Break DNS runs entirely in the browser against a local teaching model; it does not mutate DNS or issue scenario-specific network requests.
+- `working` reaches a terminal modeled answer. `nodata` keeps the name present but removes terminal A/AAAA. `nxdomain` models the queried name itself as absent. `missing-delegation` stops before an authoritative boundary can be reached. `cname-loop` returns to a previously visited alias and then terminates with an explicit STOP node.
+- These states are semantic teaching projections, not claims about the currently observed public domain.
 
 ## Failure model
 

@@ -134,6 +134,33 @@ test('Cache TTL Lab collapses and reopens the modeled lookup path as TTL state c
   expect(await hasHorizontalOverflow(page)).toBe(false);
 });
 
+test('Break DNS Lab exposes causal failure states without quiz mechanics', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /^Lab/ }).click();
+  await page.getByRole('button', { name: /Break DNS/ }).click();
+
+  await expect(page.getByText('BREAK DNS · SIMULATION')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'DNSを壊すと、どこで止まる？' })).toBeVisible();
+  await expect(page.getByText('WORKING', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'A / AAAAを外す' }).click();
+  await expect(page.getByText('NOERROR / NODATA', { exact: true })).toBeVisible();
+  await expect(page.getByText(/NXDOMAIN/).last()).toBeVisible();
+
+  await page.getByRole('button', { name: '名前自体を消す' }).click();
+  await expect(page.getByText('NXDOMAIN', { exact: true }).first()).toBeVisible();
+
+  await page.getByRole('button', { name: '委任を外す' }).click();
+  await expect(page.getByText('DELEGATION MISSING', { exact: true })).toBeVisible();
+  await expect(page.getByLabel(/Break DNS route/).getByText('AUTHORITATIVE', { exact: true })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'CNAME loopを作る' }).click();
+  await expect(page.getByText('CNAME LOOP', { exact: true })).toBeVisible();
+  await expect(page.getByText('visited name', { exact: true })).toBeVisible();
+  expect(await hasHorizontalOverflow(page)).toBe(false);
+});
+
 test('Cache TTL Lab preserves state meaning with reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -203,6 +230,18 @@ for (const [width, height] of [[390, 844], [320, 800]] as const) {
     await expect(page.getByRole('button', { name: /CANONICAL NAME github\.com/ })).toBeVisible();
     expect(await hasHorizontalOverflow(page)).toBe(false);
     expect(await hasPageVerticalScroll(page)).toBe(false);
+  });
+
+  test(`keeps Break DNS readable without horizontal overflow at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Lab/ }).click();
+    await page.getByRole('button', { name: /Break DNS/ }).click();
+    await page.getByRole('button', { name: 'CNAME loopを作る' }).click();
+
+    await expect(page.getByText('CNAME LOOP', { exact: true })).toBeVisible();
+    await expect(page.getByText('visited name', { exact: true })).toBeVisible();
+    expect(await hasHorizontalOverflow(page)).toBe(false);
   });
 
   test(`keeps Cache TTL Lab causal state readable without horizontal overflow at ${width}px`, async ({ page }) => {
