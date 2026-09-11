@@ -19,7 +19,7 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 - Show A, AAAA, CNAME, NS, and SOA data when available, including TTL.
 - Explain selected stages and records in Japanese without requiring prior DNS terminology.
 - Clear stale results when a new exploration starts or fails.
-- Keep loading, NODATA, NXDOMAIN, invalid-input, and network-error states explicit.
+- Keep loading, NODATA, NXDOMAIN, invalid-input, DNS-protocol-error, and transport-error states explicit.
 
 ## 4. Product constraints
 
