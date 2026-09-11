@@ -149,6 +149,18 @@ export function App() {
     }
   };
 
+  const changeCompareInput = (side: 'left' | 'right', value: string) => {
+    compareControllerRef.current?.abort();
+    setCompareLoading(false);
+    setCompareError(null);
+    setComparison(null);
+    if (side === 'left') {
+      setCompareLeft(value);
+    } else {
+      setCompareRight(value);
+    }
+  };
+
   const visibleError = mode === 'compare' ? compareError : error;
 
   return (
@@ -167,7 +179,11 @@ export function App() {
       <section className="hero" aria-labelledby="page-title">
         <div>
           <p className="hero-label">See what happens before a connection begins.</p>
-          <h1 id="page-title">名前解決を、役割のバトンとして見る。</h1>
+          <h1 id="page-title">
+            <span className="max-[560px]:block">名前解決を、</span>
+            <span className="max-[560px]:block">役割のバトン</span>
+            <span className="max-[560px]:block">として見る。</span>
+          </h1>
           <p className="hero-copy">
             {mode === 'compare'
               ? '2つの名前を同じDNS階層に重ねると、どこまで責任を共有し、どの委任から別々になるのかが見えてきます。'
@@ -179,8 +195,8 @@ export function App() {
             left={compareLeft}
             right={compareRight}
             loading={compareLoading}
-            onLeftChange={setCompareLeft}
-            onRightChange={setCompareRight}
+            onLeftChange={(value) => changeCompareInput('left', value)}
+            onRightChange={(value) => changeCompareInput('right', value)}
             onSubmit={() => void runComparison(compareLeft, compareRight)}
           />
         ) : (
