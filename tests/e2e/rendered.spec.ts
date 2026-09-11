@@ -31,7 +31,7 @@ test('starts with the causal DNS Story and keeps Explore available on desktop', 
 
   await page.getByRole('button', { name: '次へ' }).click();
   await expect(page.getByRole('heading', { name: 'RootはIPではなく、次の案内先を返します。' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /\.\s*ROOT/ }).first()).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: /ROOT/ }).first()).toHaveAttribute('aria-pressed', 'true');
 
   await page.getByRole('button', { name: 'Play' }).click();
   await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
