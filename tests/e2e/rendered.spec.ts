@@ -21,21 +21,39 @@ test.beforeEach(async ({ page }) => {
   await mockDns(page);
 });
 
-test('renders the DNS learning flow without horizontal overflow on desktop', async ({ page }) => {
+test('starts with the causal DNS Story and keeps Explore available on desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.getByText('google.com.', { exact: true })).toBeVisible();
+
+  await expect(page.getByRole('button', { name: /Story/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('heading', { name: 'まず、端末は「全部」を調べません。' })).toBeVisible();
   await expect(page.getByText('142.250.0.1')).toBeVisible();
+
+  await page.getByRole('button', { name: '次へ' }).click();
+  await expect(page.getByRole('heading', { name: 'RootはIPではなく、次の案内先を返します。' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /\.\s*ROOT/ }).first()).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: 'Play' }).click();
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+
+  await page.getByRole('button', { name: /Explore/ }).click();
+  await expect(page.getByRole('button', { name: /Explore/ })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: /google\.com\./ }).first().click();
   await expect(page.getByRole('heading', { name: /authoritative zone/i })).toBeVisible();
+
   expect(await hasHorizontalOverflow(page)).toBe(false);
 });
 
 for (const width of [390, 320]) {
-  test(`keeps the primary DNS flow usable at ${width}px`, async ({ page }) => {
+  test(`keeps Story controls and the primary DNS flow usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
+
     await expect(page.getByRole('button', { name: 'DNSを探索' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'まず、端末は「全部」を調べません。' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '次へ' })).toBeVisible();
     await expect(page.getByText('142.250.0.1')).toBeVisible();
     expect(await hasHorizontalOverflow(page)).toBe(false);
   });
