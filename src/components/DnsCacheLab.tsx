@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { DnsExploration } from '../lib/dns.ts';
 import {
   advanceCacheTime,
@@ -15,10 +15,6 @@ import '../lab.css';
 export function DnsCacheLab({ exploration }: { exploration: DnsExploration }) {
   const seed = useMemo(() => deriveCacheLabSeed(exploration), [exploration]);
   const [state, setState] = useState(createCacheLabState);
-
-  useEffect(() => {
-    setState(createCacheLabState());
-  }, [seed.hostname, seed.answerTtl, seed.delegationTtl]);
 
   const snapshot = previewCacheLookup(seed, state);
   const nodes = pathFor(snapshot.kind, seed.hostname);
@@ -47,7 +43,7 @@ export function DnsCacheLab({ exploration }: { exploration: DnsExploration }) {
             {seed.hostname} で観測したTTLを初期値にしたローカル模型です。時間を進めると、次の問い合わせで必要な経路だけが開きます。
           </p>
         </div>
-        <div className="cache-clock" aria-label={`シミュレーション時刻 ${state.now} 秒`}>
+        <div className="cache-clock" role="status" aria-label={`シミュレーション時刻 ${state.now} 秒`}>
           <span>SIMULATED TIME</span>
           <strong>+{state.now}s</strong>
         </div>
@@ -99,7 +95,7 @@ export function DnsCacheLab({ exploration }: { exploration: DnsExploration }) {
         </aside>
       </div>
 
-      <div className="cache-controls" aria-label="Cache Lab controls">
+      <div className="cache-controls" role="group" aria-label="Cache Lab controls">
         <button
           type="button"
           className="cache-primary-action"
