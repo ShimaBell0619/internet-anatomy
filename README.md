@@ -2,17 +2,22 @@
 
 **See what happens behind a URL.** Internet Anatomy is an interactive learning tool that turns real Internet protocol data into an explorable visual model.
 
-The first slice is **DNS Explore**: enter a URL or hostname and follow the DNS namespace from Root through TLD/delegated zones to the final A / AAAA / CNAME answers. Select any stage to learn what it means.
+The current surface focuses on DNS. Enter a URL or hostname and learn the resolution chain through two complementary modes:
+
+- **Story** — the default guided playback. Follow why a Recursive Resolver consults Root, TLD, delegated/authoritative DNS, receives an answer, and returns it to the client.
+- **Explore** — inspect the observed DNS namespace, NS/SOA information, and final A / AAAA / CNAME answers directly.
 
 ## Current behavior
 
 - Starts with `google.com` as a live example.
 - Reads real DNS data from the Google Public DNS DNS-over-HTTPS JSON API.
-- Shows Root/TLD/namespace stages, observed NS/SOA data, and final A/AAAA/CNAME records with TTL.
-- Clearly separates observed DNS answers from the explanatory namespace path reconstructed by the app.
+- Builds an explanatory Resolution Story from the observed data, with Previous / Next and Play / Pause controls.
+- Keeps the active Story step synchronized with the shared DNS path visualization.
+- Shows Root/TLD/namespace stages, observed NS/SOA data, and final A/AAAA/CNAME records with TTL in Explore.
+- Distinguishes NODATA, NXDOMAIN, DNS protocol failures, and transport errors.
 - Stores no query history in the application.
 
-> The queried hostname is sent from your browser to Google Public DNS. The visualization is not a packet capture and does not claim to reproduce your operating system's resolver path.
+> The queried hostname is sent from your browser to Google Public DNS. Story is an explanatory reconstruction from observed DNS data; it is not a packet capture, measured hop timing, or a reproduction of your operating system's resolver path.
 
 ## Development
 
