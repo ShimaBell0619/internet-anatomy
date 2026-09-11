@@ -129,8 +129,8 @@ test('Cache TTL Lab collapses and reopens the modeled lookup path as TTL state c
   await page.getByRole('button', { name: '今問い合わせる' }).click();
   await page.getByRole('button', { name: '委任も期限切れにする' }).click();
   await expect(page.getByLabel('次の問い合わせ経路: FULL RESOLUTION')).toBeVisible();
-  await expect(page.getByText('ROOT')).toBeVisible();
-  await expect(page.getByText('TLD')).toBeVisible();
+  await expect(page.getByText('ROOT', { exact: true })).toBeVisible();
+  await expect(page.getByText('TLD', { exact: true })).toBeVisible();
   expect(await hasHorizontalOverflow(page)).toBe(false);
 });
 
