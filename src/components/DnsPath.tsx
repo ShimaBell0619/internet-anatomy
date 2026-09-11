@@ -12,7 +12,7 @@ interface DnsPathProps {
 
 export function DnsPath({ exploration, selection, onSelect }: DnsPathProps) {
   return (
-    <div className="dns-path" aria-label={`${exploration.hostname} のDNS名前空間`}>
+    <section className="dns-path" aria-label={`${exploration.hostname} のDNS名前空間`}>
       <div className="path-rail" aria-hidden="true" />
       {exploration.stages.map((stage, index) => (
         <StageNode
@@ -24,7 +24,7 @@ export function DnsPath({ exploration, selection, onSelect }: DnsPathProps) {
         />
       ))}
 
-      <div className="answer-branch" aria-label="DNS回答">
+      <section className="answer-branch" aria-label="DNS回答">
         <div className="answer-heading">
           <span>ANSWER</span>
           <strong>{exploration.answerRecords.length || '0'} records</strong>
@@ -51,8 +51,8 @@ export function DnsPath({ exploration, selection, onSelect }: DnsPathProps) {
         ) : (
           <p className="empty-records">A / AAAA / CNAME の回答はありません。</p>
         )}
-      </div>
-    </div>
+      </section>
+    </section>
   );
 }
 
