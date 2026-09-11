@@ -1,4 +1,4 @@
-import { buildNamespaceCandidates, normalizeHostname, toFqdn } from './domain';
+import { buildNamespaceCandidates, normalizeHostname, toFqdn } from './domain.ts';
 
 const GOOGLE_DOH_ENDPOINT = 'https://dns.google/resolve';
 
