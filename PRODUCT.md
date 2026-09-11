@@ -4,13 +4,14 @@ Status: active.
 
 ## 1. Purpose
 
-Internet Anatomy makes invisible Internet infrastructure understandable through interactive exploration of real protocol data. The current DNS surface helps a user understand not only what records exist, but why responsibility moves from a recursive resolver through Root, TLD, delegated/authoritative DNS, and back to the client.
+Internet Anatomy makes invisible Internet infrastructure understandable through interactive exploration of real protocol data. The current DNS surface helps a user understand not only what records exist, but why responsibility moves from a recursive resolver through Root, TLD, delegated/authoritative DNS, and back to the client—and how that responsibility differs between two names.
 
 ## 2. Users and primary jobs
 
 - Learners and engineers who want to understand DNS by observing real domains instead of reading only static diagrams.
 - Primary job: enter a familiar hostname and use **Story** to follow the causal resolution chain—what is being asked, what each DNS layer knows, and why the next step follows.
-- Secondary job: use **Explore** to inspect the observed namespace stages, NS/SOA data, and final answer records in detail.
+- Contrastive job: use **Compare** with exactly two hostnames to see which DNS layers are shared and the first point where responsibility diverges.
+- Detail job: use **Explore** to inspect the observed namespace stages, NS/SOA data, and final answer records directly.
 
 ## 3. Core behaviors
 
@@ -20,33 +21,41 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 - Explain the roles of the client, Recursive Resolver, Root, TLD, observed delegation/authoritative zone, final answer, and return to the client.
 - For each Story step, explain the current question, what was learned, and why the next step follows.
 - Support manual Previous / Next navigation and Play / Pause for the Story while visibly focusing the corresponding DNS stage or answer.
+- Provide Compare for exactly two hostnames, starting from a useful `google.com` / `github.com` pair.
+- In Compare, identify the shared DNS namespace prefix, the first divergence point, each name-specific branch, observed downstream delegation evidence, and final answers.
+- When TLDs differ, make clear that responsibility diverges at the TLD level rather than implying shared TLD authority.
 - Keep Explore available for direct inspection of the DNS namespace from `.` through successively more specific names and observed delegation points.
 - Show A, AAAA, CNAME, NS, and SOA data when available, including TTL.
 - Explain selected stages and records in Japanese without requiring prior DNS terminology.
-- Clear stale results when a new exploration starts or fails.
+- Clear stale results when a new exploration or comparison starts or fails.
 - Keep loading, NODATA, NXDOMAIN, invalid-input, DNS-protocol-error, and transport-error states explicit.
 
 ## 4. Product constraints
 
 - No authentication or persistence is required for the current learning experience.
 - DNS queries are sent directly from the user's browser to the documented public DNS-over-HTTPS resolver. The UI must disclose that boundary.
-- Story is an explanatory playback reconstructed from observed DNS data. The app must not claim that it is a packet capture, the user's OS resolver path, or an iterative query performed by the browser.
-- Story and Explore must remain keyboard reachable and usable at approximately 1440px, 390px, and 320px widths without horizontal overflow.
-- Meaningful Story state must remain understandable without color alone; motion must respect reduced-motion behavior.
+- Story and Compare are explanatory projections reconstructed from observed DNS data. The app must not claim that either is a packet capture, the user's OS resolver path, or an iterative query performed by the browser.
+- A failed comparison must never present one new result beside one stale result as if both belong to the same comparison.
+- Story, Compare, and Explore must remain keyboard reachable and usable at approximately 1440px, 390px, and 320px widths without horizontal overflow.
+- Meaningful state must remain understandable without color alone; motion must respect reduced-motion behavior.
 
 ## 5. Non-goals
 
 - Editing or managing DNS zones.
 - Capturing raw DNS/UDP packets or observing a real iterative resolver exchange.
 - Simulating resolver cache/TTL expiry; TTL may be explained but not presented as a live cache model yet.
+- Comparing more than two domains in the current Compare capability.
+- Performance/latency benchmarking or multi-region probing.
 - User accounts, saved projects, or browsing history.
-- TCP, TLS, HTTP, CDN, cloud topology, or multi-region probing in the current DNS slice.
+- TCP, TLS, HTTP, CDN, or cloud topology in the current DNS slice.
 
 ## 6. Acceptance boundaries
 
 A DNS capability is supported only when its semantics are documented, representative success and failure transformations are tested, the rendered flow is validated at desktop/mobile/narrow widths, and observed versus reconstructed information is not visually or textually conflated.
 
 A Story step must be derived from current observed data or from a clearly labeled general DNS role. Missing delegation evidence must not be replaced with an invented authoritative zone.
+
+A Compare branch must be derived independently from each current `DnsExploration`. Shared ancestry is based on equal namespace stages from Root downward; downstream delegation evidence may be absent and must remain visibly absent rather than inferred.
 
 ## 7. Evolution rules
 
