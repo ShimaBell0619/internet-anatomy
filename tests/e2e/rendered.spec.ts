@@ -105,7 +105,49 @@ test('CNAME example becomes a visible name-to-name detour before the canonical a
   expect(await hasPageVerticalScroll(page)).toBe(false);
 });
 
-test('Story keeps Auto secondary and Explore/Compare remain available', async ({ page }) => {
+test('Cache TTL Lab collapses and reopens the modeled lookup path as TTL state changes', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /^Lab/ }).click();
+
+  await expect(page.getByRole('button', { name: /^Lab/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('heading', { name: '同じ名前を、もう一度引いたら？' })).toBeVisible();
+  await expect(page.getByText('CACHE / TTL LAB · SIMULATION')).toBeVisible();
+  await expect(page.getByLabel('次の問い合わせ経路: FULL RESOLUTION')).toBeVisible();
+  await expect(page.getByText(/実cacheを観測しているわけではありません/)).toBeVisible();
+
+  await page.getByRole('button', { name: '今問い合わせる' }).click();
+  await expect(page.getByLabel('次の問い合わせ経路: ANSWER CACHE HIT')).toBeVisible();
+  await expect(page.getByText('300s LEFT')).toBeVisible();
+  await expect(page.getByText('ANSWER CACHE')).toBeVisible();
+
+  await page.getByRole('button', { name: 'A / AAAAを期限切れにする' }).click();
+  await expect(page.getByLabel('次の問い合わせ経路: DELEGATION CACHE HIT')).toBeVisible();
+  await expect(page.getByText('EXPIRED')).toBeVisible();
+  await expect(page.getByText('DELEGATION CACHE')).toBeVisible();
+
+  await page.getByRole('button', { name: '今問い合わせる' }).click();
+  await page.getByRole('button', { name: '委任も期限切れにする' }).click();
+  await expect(page.getByLabel('次の問い合わせ経路: FULL RESOLUTION')).toBeVisible();
+  await expect(page.getByText('ROOT')).toBeVisible();
+  await expect(page.getByText('TLD')).toBeVisible();
+  expect(await hasHorizontalOverflow(page)).toBe(false);
+});
+
+test('Cache TTL Lab preserves state meaning with reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await page.getByRole('button', { name: /^Lab/ }).click();
+
+  const node = page.locator('.cache-node').first();
+  await expect(node).toBeVisible();
+  expect(await node.evaluate((element) => getComputedStyle(element).animationName)).toBe('none');
+  await page.getByRole('button', { name: '今問い合わせる' }).click();
+  await expect(page.getByLabel('次の問い合わせ経路: ANSWER CACHE HIT')).toBeVisible();
+});
+
+test('Story keeps Auto secondary and Explore/Compare/Lab remain available', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
 
@@ -117,6 +159,10 @@ test('Story keeps Auto secondary and Explore/Compare remain available', async ({
   await page.getByRole('button', { name: /Explore/ }).click();
   await expect(page.getByRole('button', { name: /Explore/ })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByText('142.250.0.1')).toBeVisible();
+
+  await page.getByRole('button', { name: /^Lab/ }).click();
+  await expect(page.getByRole('button', { name: /^Lab/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('CACHE / TTL LAB · SIMULATION')).toBeVisible();
 
   await page.getByRole('button', { name: /Compare/ }).click();
   await expect(page.getByRole('button', { name: /Compare/ })).toHaveAttribute('aria-pressed', 'true');
@@ -157,6 +203,21 @@ for (const [width, height] of [[390, 844], [320, 800]] as const) {
     await expect(page.getByRole('button', { name: /CANONICAL NAME github\.com/ })).toBeVisible();
     expect(await hasHorizontalOverflow(page)).toBe(false);
     expect(await hasPageVerticalScroll(page)).toBe(false);
+  });
+
+  test(`keeps Cache TTL Lab causal state readable without horizontal overflow at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Lab/ }).click();
+
+    await expect(page.getByRole('heading', { name: '同じ名前を、もう一度引いたら？' })).toBeVisible();
+    await expect(page.getByLabel('次の問い合わせ経路: FULL RESOLUTION')).toBeVisible();
+    await expect(page.getByRole('button', { name: '今問い合わせる' })).toBeVisible();
+    expect(await hasHorizontalOverflow(page)).toBe(false);
+
+    await page.getByRole('button', { name: '今問い合わせる' }).click();
+    await expect(page.getByLabel('次の問い合わせ経路: ANSWER CACHE HIT')).toBeVisible();
+    expect(await hasHorizontalOverflow(page)).toBe(false);
   });
 }
 
