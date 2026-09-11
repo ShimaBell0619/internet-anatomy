@@ -45,7 +45,8 @@ Do not add a generic repository/service layer while there is only one real integ
 - Invalid user input fails before external I/O.
 - A new exploration aborts the previous request and clears its result so stale data is never presented as current.
 - NXDOMAIN is reported explicitly when final record queries agree on `Status=3`.
-- NODATA can still produce a valid namespace exploration with an empty final answer list.
+- NODATA (`NOERROR` with no matching records) can still produce a valid namespace exploration with an empty final answer list.
+- Other DNS response codes such as `SERVFAIL`, `REFUSED`, and `FORMERR` surface as explicit errors rather than being presented as NODATA.
 - A DoH transport failure surfaces as a retryable error; the previous successful result remains cleared.
 
 ## Future boundary
