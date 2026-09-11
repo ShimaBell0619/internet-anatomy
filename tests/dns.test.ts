@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { extractRecords, type GoogleDnsResponse } from '../src/lib/dns.ts';
+import {
+  assertDnsResponseStatus,
+  extractRecords,
+  type GoogleDnsResponse,
+} from '../src/lib/dns.ts';
 
 test('extractRecords maps known and unknown DNS record types', () => {
   const response: GoogleDnsResponse = {
@@ -32,4 +36,37 @@ test('extractRecords returns an empty list for NODATA responses', () => {
     CD: false,
   };
   assert.deepEqual(extractRecords(response), []);
+});
+
+test('assertDnsResponseStatus surfaces DNS protocol errors instead of treating them as NODATA', () => {
+  const response: GoogleDnsResponse = {
+    Status: 2,
+    TC: false,
+    RD: true,
+    RA: true,
+    AD: false,
+    CD: false,
+  };
+
+  assert.throws(
+    () => assertDnsResponseStatus(response, 'example.com. A'),
+    /SERVFAIL \(2\)/,
+  );
+});
+
+test('assertDnsResponseStatus can defer NXDOMAIN handling for namespace discovery', () => {
+  const response: GoogleDnsResponse = {
+    Status: 3,
+    TC: false,
+    RD: true,
+    RA: true,
+    AD: false,
+    CD: false,
+  };
+
+  assert.doesNotThrow(() => assertDnsResponseStatus(response, 'missing.example. NS', true));
+  assert.throws(
+    () => assertDnsResponseStatus(response, 'missing.example. A'),
+    /NXDOMAIN \(3\)/,
+  );
 });
