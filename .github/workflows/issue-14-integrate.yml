@@ -1,0 +1,71 @@
+name: Integrate Issue 14
+
+on:
+  push:
+    branches:
+      - feat/issue-14-failure-lab
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: feat/issue-14-failure-lab
+      - name: Apply Issue 14 integration patches
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def patch(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'anchor not found in {path}: {old[:80]!r}')
+              p.write_text(text.replace(old, new, 1))
+
+          patch('src/App.tsx',
+              "import { DnsCacheLab } from './components/DnsCacheLab';",
+              "import { DnsLab, type LabSection } from './components/DnsLab';")
+          patch('src/App.tsx',
+              "  const [compareError, setCompareError] = useState<string | null>(null);",
+              "  const [compareError, setCompareError] = useState<string | null>(null);\n  const [labSection, setLabSection] = useState<LabSection>('cache');")
+          patch('src/App.tsx',
+              "                    <span className=\"max-[560px]:block\">TTLを進めると、</span>\n                    <span className=\"max-[560px]:block\">必要な経路が</span>\n                    <span className=\"max-[560px]:block\">変わっていく。</span>",
+              "                    <span className=\"max-[560px]:block\">条件を変えると、</span>\n                    <span className=\"max-[560px]:block\">DNSの経路と</span>\n                    <span className=\"max-[560px]:block\">失敗が見えてくる。</span>")
+          patch('src/App.tsx',
+              "                    ? '観測したTTLを種にしたローカルシミュレーションで、再問い合わせがcacheによりどこまで短縮されるかを動かして確かめます。'",
+              "                    ? 'Cache / TTLとBreak DNSのローカルシミュレーションで、同じDNS模型の条件を変え、経路が短縮・停止・ループする理由を確かめます。'")
+          patch('src/App.tsx',
+              "                  ? 'Labは観測したTTLを初期値にしたローカルシミュレーションです。実Resolver cacheの観測ではありません。'",
+              "                  ? 'Labはローカルシミュレーションです。実DNSの変更、実Resolver cacheの観測、実packet traceではありません。'")
+          patch('src/App.tsx',
+              "              {!loading && exploration && <DnsCacheLab exploration={exploration} />}\n              {!loading && !exploration && !error && (\n                <p className=\"empty-state p-8\">ドメインを探索してCache / TTL Labを開始してください。</p>\n              )}",
+              "              {!loading && exploration && (\n                <DnsLab exploration={exploration} section={labSection} onSectionChange={setLabSection} />\n              )}\n              {!loading && !exploration && !error && (\n                <p className=\"empty-state p-8\">ドメインを探索してDNS Labを開始してください。</p>\n              )}")
+
+          patch('PRODUCT.md',
+              "- Experiment job: use **Lab** to change modeled DNS conditions and observe how resolution behavior changes. Cache / TTL Lab uses observed TTL values only as simulation seeds.",
+              "- Experiment job: use **Lab** to change modeled DNS conditions and observe how resolution behavior changes. Cache / TTL uses observed TTL values only as simulation seeds; Break DNS changes only a local failure model.")
+          patch('PRODUCT.md',
+              "- Let the learner advance simulated time by expiring answer or delegation entries directly. The Lab must show simulated time, modeled cache entries, original TTLs, remaining TTLs, and the route that would be needed for the next lookup.",
+              "- Let the learner advance simulated time by expiring answer or delegation entries directly. The Lab must show simulated time, modeled cache entries, original TTLs, remaining TTLs, and the route that would be needed for the next lookup.\n- Provide Break DNS in the same Lab surface. Let the learner switch a local model among working, NODATA, NXDOMAIN, missing-delegation, and finite CNAME-loop conditions and see exactly where the modeled path terminates or stops.\n- Break DNS must distinguish NODATA (name exists but requested data is absent) from NXDOMAIN (name itself does not exist), and must never mutate or claim to mutate real DNS.")
+          patch('PRODUCT.md',
+              "A Cache / TTL Lab state transition must be produced by pure local simulation logic. The initial TTL seeds may come from the current exploration, but lookup kind, remaining TTL, cache fill, and expiry must not depend on React layout or additional network requests.",
+              "A Cache / TTL Lab state transition must be produced by pure local simulation logic. The initial TTL seeds may come from the current exploration, but lookup kind, remaining TTL, cache fill, and expiry must not depend on React layout or additional network requests.\n\nA Break DNS state must also be produced by pure local simulation logic. Working, NODATA, NXDOMAIN, missing delegation, and CNAME-loop outcomes are teaching models only; they perform no additional DNS request and never modify external DNS. Loop projections must stop finitely.")
+
+          patch('DESIGN.md',
+              "- Lab controls are direct experiment controls (`query`, expire answer, expire delegation, reset), not quiz answers.",
+              "- Lab controls are direct experiment controls, not quiz answers. Cache / TTL exposes query/expiry/reset actions; Break DNS exposes working/NODATA/NXDOMAIN/missing-delegation/CNAME-loop conditions as model mutations.")
+          patch('DESIGN.md',
+              "- Loading, error, active actor, explanatory feedback, shared, diverged, alias/canonical, cache-valid/cache-expired, empty/NODATA, and successful answer states must be explicit.",
+              "- Loading, error, active actor, explanatory feedback, shared, diverged, alias/canonical, cache-valid/cache-expired, NODATA, NXDOMAIN, missing-delegation, finite-loop, and successful answer states must be explicit.")
+
+          patch('docs/ARCHITECTURE.md',
+              "        Pure local cache lifecycle model\n```",
+              "        Pure local cache lifecycle model\n        └─ local Break DNS failure-model projection\n```)")
+          PY
