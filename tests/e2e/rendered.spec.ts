@@ -29,14 +29,14 @@ test('starts with the causal DNS Story and keeps Explore available on desktop', 
   await expect(page.getByRole('heading', { name: 'まず、端末は「全部」を調べません。' })).toBeVisible();
   await expect(page.getByText('142.250.0.1')).toBeVisible();
 
-  await page.getByRole('button', { name: '次へ' }).click();
+  await page.getByRole('button', { name: '次へ', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'RootはIPではなく、次の案内先を返します。' })).toBeVisible();
   await expect(page.getByRole('button', { name: /ROOT/ }).first()).toHaveAttribute('aria-pressed', 'true');
 
-  await page.getByRole('button', { name: 'Play' }).click();
-  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
-  await page.getByRole('button', { name: 'Pause' }).click();
-  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /Explore/ }).click();
   await expect(page.getByRole('button', { name: /Explore/ })).toHaveAttribute('aria-pressed', 'true');
@@ -51,9 +51,9 @@ for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
 
-    await expect(page.getByRole('button', { name: 'DNSを探索' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'DNSを探索', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'まず、端末は「全部」を調べません。' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '次へ' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '次へ', exact: true })).toBeVisible();
     await expect(page.getByText('142.250.0.1')).toBeVisible();
     expect(await hasHorizontalOverflow(page)).toBe(false);
   });
