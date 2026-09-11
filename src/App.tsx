@@ -49,17 +49,13 @@ export function App() {
 
     try {
       const result = await exploreDns(value, controller.signal);
-      if (!controller.signal.aborted) {
-        setExploration(result);
-      }
+      if (!controller.signal.aborted) setExploration(result);
     } catch (caught) {
       if (!controller.signal.aborted) {
         setError(caught instanceof Error ? caught.message : 'DNS探索に失敗しました。');
       }
     } finally {
-      if (!controller.signal.aborted) {
-        setLoading(false);
-      }
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [resetStory]);
 
@@ -86,9 +82,7 @@ export function App() {
         controller.abort();
       }
     } finally {
-      if (!controller.signal.aborted) {
-        setCompareLoading(false);
-      }
+      if (!controller.signal.aborted) setCompareLoading(false);
     }
   }, []);
 
@@ -106,11 +100,8 @@ export function App() {
       setSelection({ kind: 'stage', index: step.focus.index });
       return;
     }
-
     const record = exploration.answerRecords[step.focus.index];
-    if (record) {
-      setSelection({ kind: 'record', key: recordKey(record) });
-    }
+    if (record) setSelection({ kind: 'record', key: recordKey(record) });
   }, [exploration]);
 
   const handleStoryActor = useCallback((actorId: StoryActor['id']) => {
@@ -142,7 +133,6 @@ export function App() {
       setPlaying(false);
       return;
     }
-
     setStoryIndex((current) => current + 1);
   }, [story, storyComplete, storyIndex, syncExploreSelection]);
 
@@ -150,24 +140,16 @@ export function App() {
     if (!playing || mode !== 'story' || storyComplete) return;
     const step = story[storyIndex];
     if (!step) return;
-
-    const timer = window.setTimeout(() => {
-      handleStoryActor(step.action.target.id);
-    }, 3000);
-
+    const timer = window.setTimeout(() => handleStoryActor(step.action.target.id), 3000);
     return () => window.clearTimeout(timer);
   }, [handleStoryActor, mode, playing, story, storyComplete, storyIndex]);
 
-  const selectFromCanvas = (nextSelection: ExplorerSelection) => {
-    setSelection(nextSelection);
-  };
+  const selectFromCanvas = (nextSelection: ExplorerSelection) => setSelection(nextSelection);
 
   const enterCompare = () => {
     setMode('compare');
     setPlaying(false);
-    if (!comparison && !compareLoading) {
-      void runComparison(compareLeft, compareRight);
-    }
+    if (!comparison && !compareLoading) void runComparison(compareLeft, compareRight);
   };
 
   const changeCompareInput = (side: 'left' | 'right', value: string) => {
@@ -175,27 +157,25 @@ export function App() {
     setCompareLoading(false);
     setCompareError(null);
     setComparison(null);
-    if (side === 'left') {
-      setCompareLeft(value);
-    } else {
-      setCompareRight(value);
-    }
+    if (side === 'left') setCompareLeft(value);
+    else setCompareRight(value);
   };
 
-  const enterStory = () => {
-    setMode('story');
-  };
-
+  const enterStory = () => setMode('story');
   const enterExplore = () => {
     setMode('explore');
     setPlaying(false);
   };
-
   const backStory = () => {
     setPlaying(false);
     setStoryFeedback(null);
     setStoryComplete(false);
     setStoryIndex((current) => Math.max(0, current - 1));
+  };
+  const tryAliasExample = () => {
+    const value = 'www.github.com';
+    setQuery(value);
+    void runExploration(value);
   };
 
   const visibleError = mode === 'compare' ? compareError : error;
@@ -224,13 +204,7 @@ export function App() {
               onChange={setQuery}
               onSubmit={() => void runExploration(query)}
             />
-            <LearningModeNav
-              compact
-              mode={mode}
-              onStory={enterStory}
-              onCompare={enterCompare}
-              onExplore={enterExplore}
-            />
+            <LearningModeNav compact mode={mode} onStory={enterStory} onCompare={enterCompare} onExplore={enterExplore} />
           </section>
 
           {error ? (
@@ -255,6 +229,7 @@ export function App() {
               onTogglePlay={() => setPlaying((current) => !current)}
               onReplay={resetStory}
               onExplore={enterExplore}
+              onTryAliasExample={tryAliasExample}
             />
           )}
         </>
@@ -284,21 +259,14 @@ export function App() {
                 onSubmit={() => void runComparison(compareLeft, compareRight)}
               />
             ) : (
-              <QueryBar
-                value={query}
-                loading={loading}
-                onChange={setQuery}
-                onSubmit={() => void runExploration(query)}
-              />
+              <QueryBar value={query} loading={loading} onChange={setQuery} onSubmit={() => void runExploration(query)} />
             )}
             <div className="source-note">
               <span>Resolver: Google Public DNS (DoH)</span>
               <span>·</span>
-              <span>
-                {mode === 'compare'
-                  ? 'Compareは2つの観測結果を同じDNS名前空間に投影した学習モデルです。'
-                  : 'Exploreは観測したレコードを表示し、名前空間の階層は観測結果から再構成します。'}
-              </span>
+              <span>{mode === 'compare'
+                ? 'Compareは2つの観測結果を同じDNS名前空間に投影した学習モデルです。'
+                : 'Exploreは観測したレコードを表示し、名前空間の階層は観測結果から再構成します。'}</span>
             </div>
           </section>
 
@@ -306,23 +274,15 @@ export function App() {
             <section className="error-strip" role="alert">
               <strong>{mode === 'compare' ? '比較できませんでした。' : '探索できませんでした。'}</strong>
               <span>{visibleError}</span>
-              <button
-                type="button"
-                onClick={() => mode === 'compare'
-                  ? void runComparison(compareLeft, compareRight)
-                  : void runExploration(query)}
-              >
+              <button type="button" onClick={() => mode === 'compare'
+                ? void runComparison(compareLeft, compareRight)
+                : void runExploration(query)}>
                 再試行
               </button>
             </section>
           )}
 
-          <LearningModeNav
-            mode={mode}
-            onStory={enterStory}
-            onCompare={enterCompare}
-            onExplore={enterExplore}
-          />
+          <LearningModeNav mode={mode} onStory={enterStory} onCompare={enterCompare} onExplore={enterExplore} />
 
           {mode === 'compare' ? (
             <section className="compare-workspace" aria-busy={compareLoading}>
@@ -347,7 +307,6 @@ export function App() {
                     </div>
                   )}
                 </div>
-
                 <div className="canvas-body">
                   {loading && <LoadingState />}
                   {!loading && exploration && (
@@ -405,12 +364,7 @@ function LearningModeNav({
   );
 }
 
-function ModeButton({
-  active,
-  title,
-  description,
-  onClick,
-}: {
+function ModeButton({ active, title, description, onClick }: {
   active: boolean;
   title: string;
   description: string;

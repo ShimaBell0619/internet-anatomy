@@ -4,12 +4,13 @@ Status: active.
 
 ## 1. Purpose
 
-Internet Anatomy makes invisible Internet infrastructure understandable through interactive exploration of real protocol data. The current DNS surface helps a user understand not only what records exist, but why responsibility moves from a recursive resolver through Root, TLD, delegated/authoritative DNS, and back to the client—and how that responsibility differs between two names.
+Internet Anatomy makes invisible Internet infrastructure understandable through interactive exploration of real protocol data. The current DNS surface helps a user understand not only what records exist, but why responsibility moves from a recursive resolver through Root, TLD, delegated/authoritative DNS, through any observed CNAME alias handoff, and back to the client—and how that responsibility differs between two names.
 
 ## 2. Users and primary jobs
 
 - Learners and engineers who want to understand DNS by observing real domains instead of reading only static diagrams.
 - Primary job: enter a familiar hostname and use **Story** to manipulate a guided DNS responsibility model—see the current holder, choose the next reachable actor, and receive immediate explanation of what happened and why.
+- Alias-learning job: when an observed answer contains CNAME, follow the name-to-name handoff until a canonical name owns the terminal A/AAAA answer, or until the observed chain ends/cycles.
 - Contrastive job: use **Compare** with exactly two hostnames to see which DNS layers are shared and the first point where responsibility diverges.
 - Detail job: use **Explore** to inspect the observed namespace stages, NS/SOA data, and final answer records directly.
 
@@ -25,6 +26,9 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 - Provide Back as supporting navigation and Auto as a secondary watch mode. Auto uses local UI timing only and must not imply measured DNS latency.
 - Keep Story intentionally selective; detailed NS/SOA/record inspection belongs to Explore.
 - Explain the roles of the client, Recursive Resolver, Root, TLD, observed delegation/authoritative zone, final answer, and return to the client.
+- When the observed answer contains a CNAME for the queried name, show the alias as a name-to-name detour before a terminal address. The CNAME owner, CNAME target, and terminal A/AAAA owner must remain distinct.
+- Follow multiple observed CNAME hops in order. If the observed chain has no terminal A/AAAA, show that outcome explicitly; if it cycles, stop finitely and show the cycle rather than inventing an address.
+- Keep `google.com` as the simple default Story and provide a restrained `www.github.com` sample entry point for discovering the CNAME detour.
 - Provide Compare for exactly two hostnames, starting from a useful `google.com` / `github.com` pair.
 - In Compare, identify the shared DNS namespace prefix, the first divergence point, each name-specific branch, observed downstream delegation evidence, and final answers.
 - When TLDs differ, make clear that responsibility diverges at the TLD level rather than implying shared TLD authority.
@@ -39,7 +43,9 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 - No authentication or persistence is required for the current learning experience.
 - DNS queries are sent directly from the user's browser to the documented public DNS-over-HTTPS resolver. The UI must disclose that boundary.
 - Story and Compare are explanatory projections reconstructed from observed DNS data. The app must not claim that either is a packet capture, the user's OS resolver path, or an iterative query performed by the browser.
-- Story handoff lines, actor transitions, and Auto progression represent explanatory responsibility changes, not observed packets or measured hop timing.
+- Story handoff lines, actor transitions, CNAME detour rails, and Auto progression represent explanatory relationships, not observed packets or measured hop timing.
+- A CNAME chain is reconstructed only from observed Answer record owner names and CNAME RDATA. The UI must not imply that the browser directly queried each canonical target.
+- Terminal A/AAAA records belong to the record owner actually observed in the DNS response; they must not be relabeled as belonging to the original alias.
 - Story's core interaction must remain fully operable by click/tap and keyboard. Drag-and-drop may not be required for progression.
 - A failed comparison must never present one new result beside one stale result as if both belong to the same comparison.
 - Story should fit its normal scene within approximately one viewport at the rendered-review desktop/mobile baselines; Compare and Explore may scroll when their information density requires it.
@@ -50,6 +56,7 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 
 - Editing or managing DNS zones.
 - Capturing raw DNS/UDP packets or observing a real iterative resolver exchange.
+- Performing new browser-side DNS requests for each CNAME target solely to make Story look like a trace.
 - Simulating resolver cache/TTL expiry; TTL may be explained but not presented as a live cache model yet.
 - Comparing more than two domains in the current Compare capability.
 - Performance/latency benchmarking or multi-region probing.
@@ -63,6 +70,8 @@ A DNS capability is supported only when its semantics are documented, representa
 
 A Story step must be derived from current observed data or from a clearly labeled general DNS role. Its selectable target and premature alternatives are pure domain semantics; the presentation must not infer the next actor from layout position. Missing delegation evidence must not be replaced with an invented authoritative zone.
 
+An alias chain is supported only when it starts from the queried hostname and can be derived from observed CNAME owner → RDATA relationships. Terminal A/AAAA records are matched by their observed owner name. Multiple hops must remain finite; cycles and missing terminal addresses remain explicit outcomes rather than inferred success.
+
 A Compare branch must be derived independently from each current `DnsExploration`. Shared ancestry is based on equal namespace stages from Root downward; downstream delegation evidence may be absent and must remain visibly absent rather than inferred.
 
 ## 7. Evolution rules
@@ -71,4 +80,5 @@ A Compare branch must be derived independently from each current `DnsExploration
 - Do not silently broaden an explanatory model into a measurement claim.
 - Add learning capabilities incrementally around a concrete learning outcome rather than adding protocol data only because it is available.
 - Prefer protocol-semantic interaction over generic pagination when the domain action can be represented accessibly and directly.
+- Preserve DNS record ownership when transforming observed data into teaching projections.
 - Add new protocols only when their observation boundary and learning purpose are explicit.

@@ -1,5 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
+const cname = { name: 'www.github.com.', type: 5, TTL: 60, data: 'github.com.' };
+const githubAddress = { name: 'github.com.', type: 1, TTL: 60, data: '140.82.112.4' };
+
 const responses: Record<string, unknown> = {
   '.|NS': dnsResponse([{ name: '.', type: 2, TTL: 518400, data: 'a.root-servers.net.' }]),
   'com.|NS': dnsResponse([{ name: 'com.', type: 2, TTL: 172800, data: 'a.gtld-servers.net.' }]),
@@ -11,6 +14,7 @@ const responses: Record<string, unknown> = {
     { name: 'github.com.', type: 2, TTL: 3600, data: 'dns1.p08.nsone.net.' },
     { name: 'github.com.', type: 2, TTL: 3600, data: 'dns2.p08.nsone.net.' },
   ]),
+  'www.github.com.|NS': dnsResponse([]),
   '.|SOA': dnsResponse([{ name: '.', type: 6, TTL: 86400, data: 'a.root-servers.net. nstld.verisign-grs.com. 1 1800 900 604800 86400' }]),
   'com.|SOA': dnsResponse([{ name: 'com.', type: 6, TTL: 900, data: 'a.gtld-servers.net. nstld.verisign-grs.com. 1 1800 900 604800 900' }]),
   'google.com.|SOA': dnsResponse([
@@ -22,9 +26,12 @@ const responses: Record<string, unknown> = {
   'google.com.|A': dnsResponse([{ name: 'google.com.', type: 1, TTL: 300, data: '142.250.0.1' }]),
   'google.com.|AAAA': dnsResponse([{ name: 'google.com.', type: 28, TTL: 300, data: '2607:f8b0::1' }]),
   'google.com.|CNAME': dnsResponse([]),
-  'github.com.|A': dnsResponse([{ name: 'github.com.', type: 1, TTL: 60, data: '140.82.112.4' }]),
+  'github.com.|A': dnsResponse([githubAddress]),
   'github.com.|AAAA': dnsResponse([]),
   'github.com.|CNAME': dnsResponse([]),
+  'www.github.com.|A': dnsResponse([cname, githubAddress]),
+  'www.github.com.|AAAA': dnsResponse([cname]),
+  'www.github.com.|CNAME': dnsResponse([cname]),
 };
 
 test.beforeEach(async ({ page }) => {
@@ -56,6 +63,35 @@ test('Story advances by touching DNS actors and explains an early choice without
   await page.getByRole('button', { name: /^ROOT / }).click();
   await expect(page.getByRole('heading', { name: 'Rootの案内を使って次へ進む' })).toBeVisible();
   await expect(page.getByText(/Rootは個々のサイトのIPを全部持つ場所ではなく/)).toBeVisible();
+  expect(await hasPageVerticalScroll(page)).toBe(false);
+});
+
+test('CNAME example becomes a visible name-to-name detour before the canonical address', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /CNAMEの寄り道を見る/ }).click();
+  await expect(page.getByLabel('探索するURLまたはドメイン')).toHaveValue('www.github.com');
+  await expect(page.getByRole('heading', { name: '最初に質問を渡す相手を選ぶ' })).toBeVisible();
+
+  await advanceToAlias(page);
+
+  await expect(page.getByRole('heading', { name: 'CNAMEの行き先を追う' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /ADDRESS A 140\.82\.112\.4/ })).toHaveCount(0);
+  const trail = page.getByLabel('観測されたCNAME chain');
+  await expect(trail.getByText('OBSERVED ALIAS CHAIN')).toBeVisible();
+  await expect(trail.getByText('www.github.com', { exact: true }).first()).toBeVisible();
+  await expect(trail.getByText('github.com', { exact: true }).first()).toBeVisible();
+  await expect(trail.getByText('CNAME →')).toBeVisible();
+  await expect(trail.getByText(/A 140\.82\.112\.4/)).toHaveCount(0);
+
+  await page.getByRole('button', { name: /CANONICAL NAME github\.com/ }).click();
+  await expect(page.getByRole('heading', { name: '別名の先にあるAddressを選ぶ' })).toBeVisible();
+  await expect(trail.getByText(/A 140\.82\.112\.4/)).toBeVisible();
+
+  await page.getByRole('button', { name: /ADDRESS A 140\.82\.112\.4/ }).click();
+  await expect(page.getByRole('heading', { name: 'Answerを問い合わせ元へ返す' })).toBeVisible();
+  await expect(page.getByText(/canonical側の名前がこのA \/ AAAAを所有/)).toBeVisible();
   expect(await hasPageVerticalScroll(page)).toBe(false);
 });
 
@@ -97,6 +133,28 @@ for (const [width, height] of [[390, 844], [320, 800]] as const) {
     await expect(page.getByText('WHAT JUST HAPPENED')).toBeVisible();
     expect(await hasPageVerticalScroll(page)).toBe(false);
   });
+
+  test(`keeps the CNAME detour readable without overflow at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.getByRole('button', { name: /CNAMEの寄り道を見る/ }).click();
+    await advanceToAlias(page);
+
+    await expect(page.getByRole('heading', { name: 'CNAMEの行き先を追う' })).toBeVisible();
+    const trail = page.getByLabel('観測されたCNAME chain');
+    await expect(trail).toBeVisible();
+    await expect(trail.getByText(/A 140\.82\.112\.4/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /CANONICAL NAME github\.com/ })).toBeVisible();
+    expect(await hasHorizontalOverflow(page)).toBe(false);
+    expect(await hasPageVerticalScroll(page)).toBe(false);
+  });
+}
+
+async function advanceToAlias(page: Page) {
+  await page.getByRole('button', { name: /RECURSIVE RESOLVER Resolver/ }).click();
+  await page.getByRole('button', { name: /^ROOT / }).click();
+  await page.getByRole('button', { name: /^TLD com\./ }).click();
+  await page.getByRole('button', { name: /AUTHORITATIVE github\.com\./ }).click();
 }
 
 async function mockDns(page: Page) {
