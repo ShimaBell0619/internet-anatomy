@@ -1,75 +1,245 @@
-.story-route {
-  padding: 14px 22px 16px;
-  border-bottom: 1px solid var(--color-ink-700);
-  background: rgb(14 17 23 / 72%);
-}
-
-.story-route ol {
+.app-shell[data-story-mode="true"] {
+  height: 100dvh;
+  min-height: 620px;
+  padding-bottom: 12px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  overflow: hidden;
 }
 
-.story-route li {
+.app-shell[data-story-mode="true"] .topbar {
+  min-height: 56px;
+}
+
+.story-theater {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  overflow: hidden;
+  border: 1px solid var(--color-ink-700);
+  background:
+    linear-gradient(rgb(255 255 255 / 2%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 2%) 1px, transparent 1px),
+    var(--color-ink-900);
+  background-size: 28px 28px;
+}
+
+.story-theater.story-loading {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.story-stage {
+  min-height: 0;
+  padding: clamp(14px, 3vw, 34px);
+  display: grid;
+  grid-template-columns: minmax(190px, .72fr) 76px minmax(0, 1.45fr);
+  gap: clamp(10px, 2vw, 24px);
+  align-items: center;
+}
+
+.story-source {
   min-width: 0;
-  padding: 9px 8px 8px;
-  border-top: 1px solid var(--color-ink-700);
-  color: var(--color-paper-400);
-  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
-}
-
-.story-route li[data-active="true"] {
-  border-top-color: var(--color-signal);
+  min-height: 158px;
+  padding: 16px;
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  border: 1px solid rgb(130 233 208 / 48%);
   background: rgb(130 233 208 / 5%);
-  color: var(--color-paper-50);
 }
 
-.story-route span,
-.story-route strong {
+.story-baton {
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid rgb(130 233 208 / 24%);
+}
+
+.story-baton span,
+.story-baton strong {
   display: block;
   overflow-wrap: anywhere;
   font-family: var(--font-mono);
 }
 
-.story-route span {
-  margin-bottom: 5px;
-  font-size: 9px;
-  color: var(--color-signal);
+.story-baton span {
+  margin-bottom: 3px;
+  font-size: 7px;
+  letter-spacing: .1em;
+  color: var(--color-warm);
 }
 
-.story-route strong {
-  font-size: 9px;
-  line-height: 1.45;
-  letter-spacing: .06em;
+.story-baton strong {
+  font-size: 11px;
   font-weight: 500;
 }
 
-@media (max-width: 900px) {
-  .workspace[data-mode="story"] .inspector-panel {
-    order: -1;
-    border-bottom: 1px solid var(--color-ink-700);
-  }
+.story-handoff {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: .08em;
+  color: var(--color-paper-400);
+}
 
-  .workspace[data-mode="story"] .canvas-panel {
-    border-bottom: 0;
-  }
+.story-handoff i {
+  position: relative;
+  width: 100%;
+  height: 1px;
+  background: var(--color-ink-700);
+}
+
+.story-handoff i::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: 0;
+  width: 7px;
+  height: 7px;
+  border-top: 1px solid var(--color-paper-400);
+  border-right: 1px solid var(--color-paper-400);
+  transform: rotate(45deg);
+}
+
+.story-target-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.story-actor-button {
+  position: relative;
+  min-width: 0;
+  min-height: 108px;
+  padding: 12px;
+  border: 1px solid var(--color-ink-700);
+  border-radius: 4px;
+  background: rgb(9 11 15 / 76%);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.story-actor-button:hover,
+.story-actor-button:focus-visible,
+.story-actor-button[data-guided="true"] {
+  border-color: rgb(130 233 208 / 52%);
+  background: rgb(130 233 208 / 5%);
+}
+
+.story-actor-button:active {
+  transform: translateY(1px);
+}
+
+.story-complete {
+  padding: clamp(24px, 5vw, 72px);
+  grid-template-columns: minmax(0, .4fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 24px 40px;
+}
+
+.story-complete-mark {
+  width: min(20vw, 170px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(130 233 208 / 52%);
+  font-family: var(--font-mono);
+  font-size: clamp(18px, 3vw, 34px);
+  letter-spacing: .14em;
+  color: var(--color-signal);
+}
+
+.story-complete-actions {
+  grid-column: 2;
+  display: flex;
+  gap: 8px;
+}
+
+.story-complete > p:last-child {
+  grid-column: 1 / -1;
+  align-self: end;
+  margin-right: calc(clamp(24px, 5vw, 72px) * -1);
+  margin-bottom: calc(clamp(24px, 5vw, 72px) * -1);
+  margin-left: calc(clamp(24px, 5vw, 72px) * -1);
 }
 
 @media (max-width: 560px) {
-  .story-route {
-    padding: 12px 16px 14px;
+  .app-shell[data-story-mode="true"] {
+    padding-right: 12px;
+    padding-left: 12px;
+    gap: 7px;
   }
 
-  .story-route ol {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .app-shell[data-story-mode="true"] .topbar {
+    min-height: 48px;
+  }
+
+  .story-stage {
+    padding: 7px 9px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    align-content: center;
+    gap: 7px;
+  }
+
+  .story-source {
+    min-height: 0;
+    padding: 8px 9px;
+    grid-template-columns: minmax(0, 1fr) minmax(94px, .72fr);
+    align-items: center;
+    gap: 6px 10px;
+  }
+
+  .story-baton {
+    padding-top: 0;
+    padding-left: 8px;
+    border-top: 0;
+    border-left: 1px solid rgb(130 233 208 / 24%);
+  }
+
+  .story-handoff {
+    display: none;
+  }
+
+  .story-target-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .story-actor-button {
+    min-height: 68px;
+    padding: 6px;
+  }
+
+  .story-complete {
+    padding: 18px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    gap: 12px;
+  }
+
+  .story-complete-mark {
+    width: 68px;
+  }
+
+  .story-complete-actions {
+    grid-column: 1;
+  }
+
+  .story-complete > p:last-child {
+    grid-column: 1;
+    margin: 0 -18px -18px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .story-route li {
+  .story-actor-button {
     transition: none;
   }
 }
