@@ -1,0 +1,109 @@
+name: UI review capture
+
+on:
+  push:
+    branches: [feat/issue-3-dns-resolution-story]
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start app
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/internet-anatomy-vite.log 2>&1 &
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/internet-anatomy-vite.log
+          exit 1
+
+      - name: Capture deterministic Story renderings
+        run: |
+          mkdir -p ui-review
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+
+          const answers = {
+            '.|NS': [{ name: '.', type: 2, TTL: 518400, data: 'a.root-servers.net.' }],
+            'com.|NS': [{ name: 'com.', type: 2, TTL: 172800, data: 'a.gtld-servers.net.' }],
+            'google.com.|NS': [
+              { name: 'google.com.', type: 2, TTL: 21600, data: 'ns1.google.com.' },
+              { name: 'google.com.', type: 2, TTL: 21600, data: 'ns2.google.com.' },
+            ],
+            '.|SOA': [{ name: '.', type: 6, TTL: 86400, data: 'a.root-servers.net. nstld.verisign-grs.com. 1 1800 900 604800 86400' }],
+            'com.|SOA': [{ name: 'com.', type: 6, TTL: 900, data: 'a.gtld-servers.net. nstld.verisign-grs.com. 1 1800 900 604800 900' }],
+            'google.com.|SOA': [{ name: 'google.com.', type: 6, TTL: 60, data: 'ns1.google.com. dns-admin.google.com. 1 900 900 1800 60' }],
+            'google.com.|A': [{ name: 'google.com.', type: 1, TTL: 300, data: '142.250.0.1' }],
+            'google.com.|AAAA': [{ name: 'google.com.', type: 28, TTL: 300, data: '2607:f8b0::1' }],
+            'google.com.|CNAME': [],
+          };
+
+          const browser = await chromium.launch();
+
+          async function openPage(width, height) {
+            const page = await browser.newPage({ viewport: { width, height } });
+            await page.route('https://dns.google/resolve**', async (route) => {
+              const url = new URL(route.request().url());
+              const key = `${url.searchParams.get('name') ?? ''}|${url.searchParams.get('type') ?? ''}`;
+              await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ Status: 0, TC: false, RD: true, RA: true, AD: false, CD: false, Answer: answers[key] ?? [] }),
+              });
+            });
+            await page.goto('http://127.0.0.1:4173');
+            await page.getByText('142.250.0.1').waitFor();
+            return page;
+          }
+
+          const desktop = await openPage(1440, 1000);
+          await desktop.screenshot({ path: 'ui-review/desktop-story-start.png', fullPage: true });
+          await desktop.getByRole('button', { name: '次へ', exact: true }).click();
+          await desktop.screenshot({ path: 'ui-review/desktop-story-root.png', fullPage: true });
+          await desktop.getByRole('button', { name: '次へ', exact: true }).click();
+          await desktop.getByRole('button', { name: '次へ', exact: true }).click();
+          await desktop.screenshot({ path: 'ui-review/desktop-story-authoritative.png', fullPage: true });
+          await desktop.close();
+
+          for (const [name, width, height] of [
+            ['mobile-390', 390, 844],
+            ['narrow-320', 320, 800],
+          ]) {
+            const page = await openPage(width, height);
+            await page.screenshot({ path: `ui-review/${name}.png`, fullPage: true });
+            await page.close();
+          }
+
+          await browser.close();
+          NODE
+
+      - name: Upload UI review screenshots
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ui-review-story-screenshots
+          path: ui-review/*.png
+          if-no-files-found: error
+          retention-days: 1
