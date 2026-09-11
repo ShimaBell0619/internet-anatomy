@@ -119,12 +119,12 @@ test('Cache TTL Lab collapses and reopens the modeled lookup path as TTL state c
   await page.getByRole('button', { name: '今問い合わせる' }).click();
   await expect(page.getByLabel('次の問い合わせ経路: ANSWER CACHE HIT')).toBeVisible();
   await expect(page.getByText('300s LEFT')).toBeVisible();
-  await expect(page.getByText('ANSWER CACHE')).toBeVisible();
+  await expect(page.getByText('ANSWER CACHE', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'A / AAAAを期限切れにする' }).click();
   await expect(page.getByLabel('次の問い合わせ経路: DELEGATION CACHE HIT')).toBeVisible();
   await expect(page.getByText('EXPIRED')).toBeVisible();
-  await expect(page.getByText('DELEGATION CACHE')).toBeVisible();
+  await expect(page.getByText('DELEGATION CACHE', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: '今問い合わせる' }).click();
   await page.getByRole('button', { name: '委任も期限切れにする' }).click();
