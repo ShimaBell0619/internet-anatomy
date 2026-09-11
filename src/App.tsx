@@ -220,6 +220,7 @@ export function App() {
             <QueryBar
               value={query}
               loading={loading}
+              compact
               onChange={setQuery}
               onSubmit={() => void runExploration(query)}
             />
