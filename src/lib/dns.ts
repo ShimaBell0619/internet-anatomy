@@ -128,16 +128,10 @@ export async function exploreDns(input: string, signal?: AbortSignal): Promise<D
       if (nsByCandidate[index].length === 0) {
         return null;
       }
-      try {
-        const response = await queryGoogleDns(name, 'SOA', signal);
-        assertDnsResponseStatus(response, `${toFqdn(name)} SOA`);
-        return response;
-      } catch (error) {
-        if (signal?.aborted) {
-          throw error;
-        }
-        return null;
-      }
+
+      const response = await queryGoogleDns(name, 'SOA', signal);
+      assertDnsResponseStatus(response, `${toFqdn(name)} SOA`);
+      return response;
     }),
   );
 
