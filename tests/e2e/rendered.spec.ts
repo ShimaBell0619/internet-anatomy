@@ -82,10 +82,11 @@ test('CNAME example becomes a visible name-to-name detour before the canonical a
   await expect(trail.getByText('www.github.com', { exact: true }).first()).toBeVisible();
   await expect(trail.getByText('github.com', { exact: true }).first()).toBeVisible();
   await expect(trail.getByText('CNAME →')).toBeVisible();
-  await expect(trail.getByText(/A 140\.82\.112\.4/)).toBeVisible();
+  await expect(trail.getByText(/A 140\.82\.112\.4/)).toHaveCount(0);
 
   await page.getByRole('button', { name: /CANONICAL NAME github\.com/ }).click();
   await expect(page.getByRole('heading', { name: '別名の先にあるAddressを選ぶ' })).toBeVisible();
+  await expect(trail.getByText(/A 140\.82\.112\.4/)).toBeVisible();
 
   await page.getByRole('button', { name: /ADDRESS A 140\.82\.112\.4/ }).click();
   await expect(page.getByRole('heading', { name: 'Answerを問い合わせ元へ返す' })).toBeVisible();
@@ -139,7 +140,9 @@ for (const [width, height] of [[390, 844], [320, 800]] as const) {
     await advanceToAlias(page);
 
     await expect(page.getByRole('heading', { name: 'CNAMEの行き先を追う' })).toBeVisible();
-    await expect(page.getByLabel('観測されたCNAME chain')).toBeVisible();
+    const trail = page.getByLabel('観測されたCNAME chain');
+    await expect(trail).toBeVisible();
+    await expect(trail.getByText(/A 140\.82\.112\.4/)).toHaveCount(0);
     await expect(page.getByRole('button', { name: /CANONICAL NAME github\.com/ })).toBeVisible();
     expect(await hasHorizontalOverflow(page)).toBe(false);
     expect(await hasPageVerticalScroll(page)).toBe(false);
