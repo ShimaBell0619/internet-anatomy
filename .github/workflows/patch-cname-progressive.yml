@@ -25,18 +25,19 @@ jobs:
           path = Path('src/lib/story.ts')
           text = path.read_text()
           old = """        alternatives: compactAlternatives([\n          alternative(answer, 'CNAME自体はIPアドレスではありません。まずRDATAが示す別のDNS名へバトンを渡します。'),\n          alternative(client, 'Resolverは別名の解決を続けてから、最終結果をClientへ返します。'),\n        ]),"""
-          new = """        alternatives: [],"""
           if old not in text:
               raise SystemExit('expected alias alternative block not found')
-          path.write_text(text.replace(old, new, 1))
+          path.write_text(text.replace(old, "        alternatives: [],", 1))
 
           test = Path('tests/e2e/rendered.spec.ts')
           text = test.read_text()
-          needle = """  await expect(page.getByRole('heading', { name: 'CNAMEの行き先を追う' })).toBeVisible();\n  await expect(page.getByText('OBSERVED ALIAS CHAIN')).toBeVisible();"""
-          replacement = """  await expect(page.getByRole('heading', { name: 'CNAMEの行き先を追う' })).toBeVisible();\n  await expect(page.getByRole('button', { name: /ADDRESS A 140\\.82\\.112\\.4/ })).toHaveCount(0);\n  await expect(page.getByText('OBSERVED ALIAS CHAIN')).toBeVisible();"""
+          needle = "  await expect(page.getByRole('heading', { name: 'CNAMEの行き先を追う' })).toBeVisible();"
+          assertion = "  await expect(page.getByRole('button', { name: /ADDRESS A 140\\.82\\.112\\.4/ })).toHaveCount(0);"
           if needle not in text:
-              raise SystemExit('expected CNAME e2e anchor not found')
-          test.write_text(text.replace(needle, replacement, 1))
+              raise SystemExit('expected CNAME e2e heading not found')
+          if assertion not in text:
+              text = text.replace(needle, needle + '\n' + assertion, 1)
+          test.write_text(text)
           PY
 
       - name: Commit patch
