@@ -83,11 +83,8 @@
 }
 
 .cache-route {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(92px, 1fr);
+  display: flex;
   align-items: center;
-  gap: 8px;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -95,10 +92,14 @@
 }
 
 .cache-route li {
-  display: contents;
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
 }
 
 .cache-node {
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 92px;
   display: grid;
@@ -132,8 +133,9 @@
 
 .cache-route i {
   position: relative;
+  flex: 0 0 20px;
   height: 1px;
-  min-width: 16px;
+  margin: 0 5px;
   background: rgb(130 233 208 / 42%);
   transform-origin: left center;
   animation: cache-line-open 220ms ease-out both;
@@ -149,12 +151,6 @@
   border-top: 1px solid var(--color-signal);
   border-right: 1px solid var(--color-signal);
   transform: rotate(45deg);
-}
-
-.cache-route[data-kind="answer-cache-hit"] .cache-node:nth-of-type(3),
-.cache-route[data-kind="delegation-cache-hit"] .cache-node:nth-of-type(3) {
-  border-color: rgb(240 200 121 / 48%);
-  background: rgb(240 200 121 / 5%);
 }
 
 .cache-explanation {
@@ -230,7 +226,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin: 0;
   padding: 14px clamp(18px, 3vw, 34px);
+  border: 0;
   border-top: 1px solid var(--color-ink-700);
   background: rgb(14 17 23 / 94%);
 }
@@ -294,10 +292,7 @@
   }
 
   .cache-route {
-    grid-auto-flow: row;
-    grid-auto-rows: auto;
-    grid-auto-columns: 1fr;
-    gap: 5px;
+    display: block;
   }
 
   .cache-route li {
@@ -309,8 +304,7 @@
   .cache-route i {
     width: 1px;
     height: 14px;
-    min-width: 0;
-    margin-left: 18px;
+    margin: 0 0 0 18px;
     transform-origin: top center;
   }
 
