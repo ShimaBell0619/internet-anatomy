@@ -204,27 +204,33 @@ export function DnsStory({
 }
 
 function AliasTrail({ trail }: { trail: AliasStoryTrail }) {
+  const revealedHopCount = Math.min(trail.activeHop + 1, trail.hops.length);
+  const revealedHops = trail.hops.slice(0, revealedHopCount);
+  const revealTerminal = trail.activeHop >= trail.hops.length;
+
   return (
     <section className="story-alias-trail" aria-label="観測されたCNAME chain">
       <span className="story-alias-label">OBSERVED ALIAS CHAIN</span>
       <ol>
-        {trail.hops.map((hop, index) => (
+        {revealedHops.map((hop, index) => (
           <li key={`${hop.ownerName}-${hop.targetName}`} data-active={index === trail.activeHop ? 'true' : 'false'}>
             <strong>{hop.ownerName}</strong>
             <span>CNAME →</span>
             <strong>{hop.targetName}</strong>
           </li>
         ))}
-        <li data-active={trail.activeHop >= trail.hops.length ? 'true' : 'false'}>
-          <strong>{trail.terminalName}</strong>
-          {trail.outcome === 'terminal-address' ? (
-            <span>{trail.terminalRecords.map((record) => `${record.type} ${record.data}`).join(' / ')}</span>
-          ) : trail.outcome === 'cycle' ? (
-            <span>CNAME LOOP · stop</span>
-          ) : (
-            <span>NO OBSERVED A / AAAA</span>
-          )}
-        </li>
+        {revealTerminal && (
+          <li data-active="true">
+            <strong>{trail.terminalName}</strong>
+            {trail.outcome === 'terminal-address' ? (
+              <span>{trail.terminalRecords.map((record) => `${record.type} ${record.data}`).join(' / ')}</span>
+            ) : trail.outcome === 'cycle' ? (
+              <span>CNAME LOOP · stop</span>
+            ) : (
+              <span>NO OBSERVED A / AAAA</span>
+            )}
+          </li>
+        )}
       </ol>
     </section>
   );
