@@ -262,10 +262,7 @@ function appendAliasSteps(
         instruction: 'CNAMEの行き先を追う',
         source,
         target,
-        alternatives: compactAlternatives([
-          alternative(answer, 'CNAME自体はIPアドレスではありません。まずRDATAが示す別のDNS名へバトンを渡します。'),
-          alternative(client, 'Resolverは別名の解決を続けてから、最終結果をClientへ返します。'),
-        ]),
+        alternatives: [],
       },
       visual: { ...visualBase, activeHop: index },
     });

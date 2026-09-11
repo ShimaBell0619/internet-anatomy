@@ -77,6 +77,7 @@ test('CNAME example becomes a visible name-to-name detour before the canonical a
   await advanceToAlias(page);
 
   await expect(page.getByRole('heading', { name: 'CNAMEの行き先を追う' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /ADDRESS A 140\.82\.112\.4/ })).toHaveCount(0);
   const trail = page.getByLabel('観測されたCNAME chain');
   await expect(trail.getByText('OBSERVED ALIAS CHAIN')).toBeVisible();
   await expect(trail.getByText('www.github.com', { exact: true }).first()).toBeVisible();
