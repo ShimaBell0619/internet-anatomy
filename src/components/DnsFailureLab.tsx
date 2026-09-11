@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { buildFailureLabModel, type FailureScenario } from '../lib/failureLab.ts';
 import '../failure-lab.css';
 
@@ -74,7 +74,7 @@ function ScenarioButton({
 }: {
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button type="button" aria-pressed={active} onClick={onClick}>
