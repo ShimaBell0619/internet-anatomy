@@ -1,0 +1,114 @@
+name: UI CNAME review capture
+
+on:
+  push:
+    branches: [feat/issue-8-cname-story-stage]
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start app
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/internet-anatomy-vite.log 2>&1 &
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/internet-anatomy-vite.log
+          exit 1
+
+      - name: Capture deterministic CNAME Story renderings
+        run: |
+          mkdir -p ui-review
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+
+          const cname = { name: 'www.github.com.', type: 5, TTL: 60, data: 'github.com.' };
+          const address = { name: 'github.com.', type: 1, TTL: 60, data: '140.82.112.4' };
+          const answers = {
+            '.|NS': [{ name: '.', type: 2, TTL: 518400, data: 'a.root-servers.net.' }],
+            'com.|NS': [{ name: 'com.', type: 2, TTL: 172800, data: 'a.gtld-servers.net.' }],
+            'google.com.|NS': [{ name: 'google.com.', type: 2, TTL: 21600, data: 'ns1.google.com.' }],
+            'github.com.|NS': [{ name: 'github.com.', type: 2, TTL: 3600, data: 'dns1.p08.nsone.net.' }],
+            'www.github.com.|NS': [],
+            '.|SOA': [{ name: '.', type: 6, TTL: 86400, data: 'a.root-servers.net. nstld.verisign-grs.com. 1 1800 900 604800 86400' }],
+            'com.|SOA': [{ name: 'com.', type: 6, TTL: 900, data: 'a.gtld-servers.net. nstld.verisign-grs.com. 1 1800 900 604800 900' }],
+            'google.com.|SOA': [{ name: 'google.com.', type: 6, TTL: 60, data: 'ns1.google.com. dns-admin.google.com. 1 900 900 1800 60' }],
+            'github.com.|SOA': [{ name: 'github.com.', type: 6, TTL: 60, data: 'dns1.p08.nsone.net. hostmaster.nsone.net. 1 7200 900 1209600 3600' }],
+            'google.com.|A': [{ name: 'google.com.', type: 1, TTL: 300, data: '142.250.0.1' }],
+            'google.com.|AAAA': [],
+            'google.com.|CNAME': [],
+            'www.github.com.|A': [cname, address],
+            'www.github.com.|AAAA': [cname],
+            'www.github.com.|CNAME': [cname],
+          };
+
+          const browser = await chromium.launch();
+
+          async function openAlias(width, height) {
+            const page = await browser.newPage({ viewport: { width, height } });
+            await page.route('https://dns.google/resolve**', async (route) => {
+              const url = new URL(route.request().url());
+              const key = `${url.searchParams.get('name') ?? ''}|${url.searchParams.get('type') ?? ''}`;
+              await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ Status: 0, TC: false, RD: true, RA: true, AD: false, CD: false, Answer: answers[key] ?? [] }),
+              });
+            });
+            await page.goto('http://127.0.0.1:4173');
+            await page.getByRole('button', { name: /CNAMEの寄り道を見る/ }).click();
+            await page.getByRole('heading', { name: '最初に質問を渡す相手を選ぶ' }).waitFor();
+            await page.getByRole('button', { name: /RECURSIVE RESOLVER Resolver/ }).click();
+            await page.getByRole('button', { name: /^ROOT / }).click();
+            await page.getByRole('button', { name: /^TLD com\./ }).click();
+            await page.getByRole('button', { name: /AUTHORITATIVE github\.com\./ }).click();
+            await page.getByRole('heading', { name: 'CNAMEの行き先を追う' }).waitFor();
+            return page;
+          }
+
+          for (const [name, width, height] of [
+            ['desktop', 1440, 1000],
+            ['mobile-390', 390, 844],
+            ['narrow-320', 320, 800],
+          ]) {
+            const page = await openAlias(width, height);
+            await page.screenshot({ path: `ui-review/${name}-alias.png`, fullPage: true });
+            await page.getByRole('button', { name: /CANONICAL NAME github\.com/ }).click();
+            await page.screenshot({ path: `ui-review/${name}-address.png`, fullPage: true });
+            await page.close();
+          }
+
+          await browser.close();
+          NODE
+
+      - name: Upload UI review screenshots
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ui-cname-review-screenshots
+          path: ui-review/*.png
+          if-no-files-found: error
+          retention-days: 1
