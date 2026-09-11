@@ -57,6 +57,10 @@ test('keeps Story and Explore intact while adding a causal DNS comparison', asyn
   await expect(page.getByRole('heading', { name: 'google.com', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'github.com', exact: true })).toBeVisible();
   expect(await hasHorizontalOverflow(page)).toBe(false);
+
+  await page.getByLabel('比較する2つ目のURLまたはドメイン').fill('example.jp');
+  await expect(page.getByText('2つのドメインを指定してDNS責任の分岐を比較してください。')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /com\. までは共通/ })).toHaveCount(0);
 });
 
 for (const width of [390, 320]) {
