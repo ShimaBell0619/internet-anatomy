@@ -1,4 +1,4 @@
-import type { DnsStoryStep, StoryActor } from '../lib/story.ts';
+import type { AliasStoryTrail, DnsStoryStep, StoryActor } from '../lib/story.ts';
 import '../story.css';
 
 export interface StoryFeedback {
@@ -19,6 +19,7 @@ interface DnsStoryProps {
   onTogglePlay: () => void;
   onReplay: () => void;
   onExplore: () => void;
+  onTryAliasExample: () => void;
 }
 
 export function DnsStory({
@@ -32,9 +33,11 @@ export function DnsStory({
   onTogglePlay,
   onReplay,
   onExplore,
+  onTryAliasExample,
 }: DnsStoryProps) {
   const step = steps[activeIndex] ?? steps[0];
   if (!step) return null;
+  const hostname = extractHostname(steps);
 
   if (complete) {
     return (
@@ -46,7 +49,7 @@ export function DnsStory({
             名前解決のバトンが、端末へ戻りました。
           </h2>
           <p className="mt-4 max-w-3xl text-[13px] leading-7 text-[var(--color-paper-200)]">
-            RootがIPを全部知っているのではなく、Resolverが管理境界を順番にたどり、得たAnswerをClientへ返す流れを体験しました。
+            Rootから委任をたどり、CNAMEがあれば別名も追い、Resolverが得た最終結果をClientへ返す流れを体験しました。
           </p>
         </div>
         <div className="story-complete-actions">
@@ -130,11 +133,11 @@ export function DnsStory({
         </ol>
       </header>
 
-      <div className="story-stage" aria-describedby="story-question">
-        <ActorSource actor={step.action.source} hostname={extractHostname(steps)} />
+      <div className="story-stage" data-alias={step.visual?.kind === 'alias' ? 'true' : 'false'} aria-describedby="story-question">
+        <ActorSource actor={step.action.source} hostname={hostname} />
 
         <div className="story-handoff" aria-hidden="true">
-          <span>HANDOFF</span>
+          <span>{step.visual?.kind === 'alias' ? 'CNAME' : 'HANDOFF'}</span>
           <i />
         </div>
 
@@ -154,6 +157,8 @@ export function DnsStory({
             ))}
           </fieldset>
         </div>
+
+        {step.visual?.kind === 'alias' && <AliasTrail trail={step.visual} />}
       </div>
 
       <div className={`grid min-h-[96px] grid-cols-[150px_minmax(0,1fr)] items-center gap-[18px] border-t bg-[color:rgb(14_17_23_/_94%)] px-[18px] py-3 ${feedbackTone} max-[560px]:min-h-0 max-[560px]:grid-cols-1 max-[560px]:gap-1 max-[560px]:px-2.5 max-[560px]:py-2`} aria-live="polite" aria-atomic="true">
@@ -172,17 +177,55 @@ export function DnsStory({
               )}
             </>
           ) : (
-            <>
-              <strong className="mb-0.5 block text-[12px] font-semibold max-[560px]:text-[10px]">見えているDNS actorを選んで進めます。</strong>
-              <p className="m-0 text-[10px] leading-[1.55] text-[var(--color-paper-200)] max-[560px]:text-[9px] max-[560px]:leading-[1.4]">
-                早すぎる相手を選んでも失敗にはしません。なぜ今そこへ行けないかを、この場所で説明します。
-              </p>
-            </>
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1">
+              <div className="min-w-0">
+                <strong className="mb-0.5 block text-[12px] font-semibold max-[560px]:text-[10px]">見えているDNS actorを選んで進めます。</strong>
+                <p className="m-0 text-[10px] leading-[1.55] text-[var(--color-paper-200)] max-[560px]:text-[9px] max-[560px]:leading-[1.4]">
+                  早すぎる相手を選んでも失敗にはしません。なぜ今そこへ行けないかを、この場所で説明します。
+                </p>
+              </div>
+              {hostname !== 'www.github.com' && (
+                <button
+                  type="button"
+                  onClick={onTryAliasExample}
+                  className="shrink-0 border-0 border-b border-[var(--color-warm)] bg-transparent p-0 font-mono text-[9px] text-[var(--color-warm)] max-[560px]:text-[8px]"
+                >
+                  CNAMEの寄り道を見る · www.github.com
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
 
       <StoryDisclosure />
+    </section>
+  );
+}
+
+function AliasTrail({ trail }: { trail: AliasStoryTrail }) {
+  return (
+    <section className="story-alias-trail" aria-label="観測されたCNAME chain">
+      <span className="story-alias-label">OBSERVED ALIAS CHAIN</span>
+      <ol>
+        {trail.hops.map((hop, index) => (
+          <li key={`${hop.ownerName}-${hop.targetName}`} data-active={index === trail.activeHop ? 'true' : 'false'}>
+            <strong>{hop.ownerName}</strong>
+            <span>CNAME →</span>
+            <strong>{hop.targetName}</strong>
+          </li>
+        ))}
+        <li data-active={trail.activeHop >= trail.hops.length ? 'true' : 'false'}>
+          <strong>{trail.terminalName}</strong>
+          {trail.outcome === 'terminal-address' ? (
+            <span>{trail.terminalRecords.map((record) => `${record.type} ${record.data}`).join(' / ')}</span>
+          ) : trail.outcome === 'cycle' ? (
+            <span>CNAME LOOP · stop</span>
+          ) : (
+            <span>NO OBSERVED A / AAAA</span>
+          )}
+        </li>
+      </ol>
     </section>
   );
 }
@@ -194,7 +237,7 @@ function ActorSource({ actor, hostname }: { actor: StoryActor; hostname: string 
       <ActorIdentity actor={actor} />
       <div className="story-baton">
         <span>EXPLANATORY BATON</span>
-        <strong>{hostname} ?</strong>
+        <strong>{actor.kind === 'alias' ? actor.name : `${hostname} ?`}</strong>
       </div>
     </section>
   );
@@ -228,7 +271,7 @@ function ActorIdentity({ actor, compact = false }: { actor: StoryActor; compact?
 function StoryDisclosure() {
   return (
     <p className="m-0 border-t border-[color:rgb(40_48_60_/_65%)] bg-[color:rgb(9_11_15_/_88%)] px-[18px] py-1.5 font-mono text-[8px] leading-[1.45] text-[var(--color-paper-400)] max-[560px]:px-2.5 max-[560px]:py-1 max-[560px]:text-[7px]">
-      EXPLANATORY MODEL · Google Public DNSで観測したレコードから再構成。表示するhandoffは実パケットの捕捉や実測hopではありません。
+      EXPLANATORY MODEL · Google Public DNSで観測したレコードから再構成。CNAME chainもAnswerのowner/RDATAから組み立てた論理関係で、実パケットの捕捉や実測hopではありません。
     </p>
   );
 }
