@@ -2,12 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DnsCompare, DnsCompareQuery } from './components/DnsCompare';
 import { DnsInspector } from './components/DnsInspector';
 import { DnsPath, recordKey, type ExplorerSelection } from './components/DnsPath';
-import { DnsStory } from './components/DnsStory';
-import { DnsStoryRoute } from './components/DnsStoryRoute';
+import { DnsStory, type StoryFeedback } from './components/DnsStory';
 import { QueryBar } from './components/QueryBar';
 import { buildDnsComparison, type DnsComparison } from './lib/compare.ts';
 import { exploreDns, type DnsExploration } from './lib/dns';
-import { buildDnsStory } from './lib/story.ts';
+import { buildDnsStory, type DnsStoryStep, type StoryActor } from './lib/story.ts';
 
 type WorkspaceMode = 'story' | 'compare' | 'explore';
 
@@ -17,6 +16,8 @@ export function App() {
   const [selection, setSelection] = useState<ExplorerSelection>({ kind: 'stage', index: 0 });
   const [mode, setMode] = useState<WorkspaceMode>('story');
   const [storyIndex, setStoryIndex] = useState(0);
+  const [storyComplete, setStoryComplete] = useState(false);
+  const [storyFeedback, setStoryFeedback] = useState<StoryFeedback | null>(null);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +30,13 @@ export function App() {
   const compareControllerRef = useRef<AbortController | null>(null);
   const story = useMemo(() => (exploration ? buildDnsStory(exploration) : []), [exploration]);
 
+  const resetStory = useCallback(() => {
+    setStoryIndex(0);
+    setStoryComplete(false);
+    setStoryFeedback(null);
+    setPlaying(false);
+  }, []);
+
   const runExploration = useCallback(async (value: string) => {
     controllerRef.current?.abort();
     const controller = new AbortController();
@@ -37,8 +45,7 @@ export function App() {
     setError(null);
     setExploration(null);
     setSelection({ kind: 'stage', index: 0 });
-    setStoryIndex(0);
-    setPlaying(false);
+    resetStory();
 
     try {
       const result = await exploreDns(value, controller.signal);
@@ -54,7 +61,7 @@ export function App() {
         setLoading(false);
       }
     }
-  }, []);
+  }, [resetStory]);
 
   const runComparison = useCallback(async (leftValue: string, rightValue: string) => {
     compareControllerRef.current?.abort();
@@ -93,52 +100,66 @@ export function App() {
     };
   }, [runExploration]);
 
-  useEffect(() => {
-    if (mode !== 'story' || !exploration) return;
-    const focus = story[storyIndex]?.focus;
-    if (!focus) return;
-
-    if (focus.kind === 'stage') {
-      setSelection({ kind: 'stage', index: focus.index });
+  const syncExploreSelection = useCallback((step: DnsStoryStep) => {
+    if (!exploration) return;
+    if (step.focus.kind === 'stage') {
+      setSelection({ kind: 'stage', index: step.focus.index });
       return;
     }
 
-    const record = exploration.answerRecords[focus.index];
+    const record = exploration.answerRecords[step.focus.index];
     if (record) {
       setSelection({ kind: 'record', key: recordKey(record) });
     }
-  }, [exploration, mode, story, storyIndex]);
+  }, [exploration]);
+
+  const handleStoryActor = useCallback((actorId: StoryActor['id']) => {
+    if (storyComplete) return;
+    const step = story[storyIndex];
+    if (!step) return;
+
+    if (actorId !== step.action.target.id) {
+      const alternative = step.action.alternatives.find((item) => item.actor.id === actorId);
+      setPlaying(false);
+      setStoryFeedback({
+        kind: 'hint',
+        title: 'そこへ行くには、まだ手掛かりが足りません。',
+        text: alternative?.explanation ?? '現在の管理境界から、まず次の手掛かりを得る必要があります。',
+      });
+      return;
+    }
+
+    syncExploreSelection(step);
+    setStoryFeedback({
+      kind: 'success',
+      title: step.title,
+      text: step.learned,
+      detail: step.whyNext,
+    });
+
+    if (storyIndex >= story.length - 1) {
+      setStoryComplete(true);
+      setPlaying(false);
+      return;
+    }
+
+    setStoryIndex((current) => current + 1);
+  }, [story, storyComplete, storyIndex, syncExploreSelection]);
 
   useEffect(() => {
-    if (!playing || mode !== 'story' || story.length === 0) return;
-    if (storyIndex >= story.length - 1) {
-      setPlaying(false);
-      return;
-    }
+    if (!playing || mode !== 'story' || storyComplete) return;
+    const step = story[storyIndex];
+    if (!step) return;
 
     const timer = window.setTimeout(() => {
-      setStoryIndex((current) => Math.min(current + 1, story.length - 1));
-    }, 3200);
+      handleStoryActor(step.action.target.id);
+    }, 3000);
 
     return () => window.clearTimeout(timer);
-  }, [mode, playing, story.length, storyIndex]);
+  }, [handleStoryActor, mode, playing, story, storyComplete, storyIndex]);
 
   const selectFromCanvas = (nextSelection: ExplorerSelection) => {
-    if (mode === 'story') {
-      setMode('explore');
-      setPlaying(false);
-    }
     setSelection(nextSelection);
-  };
-
-  const toggleStoryPlayback = () => {
-    if (story.length === 0) return;
-    if (storyIndex === story.length - 1 && !playing) {
-      setStoryIndex(0);
-      setPlaying(true);
-      return;
-    }
-    setPlaying((current) => !current);
   };
 
   const enterCompare = () => {
@@ -161,10 +182,27 @@ export function App() {
     }
   };
 
+  const enterStory = () => {
+    setMode('story');
+  };
+
+  const enterExplore = () => {
+    setMode('explore');
+    setPlaying(false);
+  };
+
+  const backStory = () => {
+    setPlaying(false);
+    setStoryFeedback(null);
+    setStoryComplete(false);
+    setStoryIndex((current) => Math.max(0, current - 1));
+  };
+
   const visibleError = mode === 'compare' ? compareError : error;
+  const storyMode = mode === 'story';
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" data-story-mode={storyMode ? 'true' : 'false'}>
       <header className="topbar">
         <a className="brand" href="/" aria-label="Internet Anatomy home">
           <span className="brand-mark" aria-hidden="true">IA</span>
@@ -176,174 +214,193 @@ export function App() {
         <span className="live-source">REAL DNS · EXPLANATORY MODEL</span>
       </header>
 
-      <section className="hero" aria-labelledby="page-title">
-        <div>
-          <p className="hero-label">See what happens before a connection begins.</p>
-          <h1 id="page-title">
-            <span className="max-[560px]:block">名前解決を、</span>
-            <span className="max-[560px]:block">役割のバトン</span>
-            <span className="max-[560px]:block">として見る。</span>
-          </h1>
-          <p className="hero-copy">
-            {mode === 'compare'
-              ? '2つの名前を同じDNS階層に重ねると、どこまで責任を共有し、どの委任から別々になるのかが見えてきます。'
-              : 'URLを1つ入力すると、Root・TLD・権威DNSが「何を知り、なぜ次へ渡すのか」を実データから組み立てたStoryでたどれます。'}
-          </p>
-        </div>
-        {mode === 'compare' ? (
-          <DnsCompareQuery
-            left={compareLeft}
-            right={compareRight}
-            loading={compareLoading}
-            onLeftChange={(value) => changeCompareInput('left', value)}
-            onRightChange={(value) => changeCompareInput('right', value)}
-            onSubmit={() => void runComparison(compareLeft, compareRight)}
-          />
-        ) : (
-          <QueryBar
-            value={query}
-            loading={loading}
-            onChange={setQuery}
-            onSubmit={() => void runExploration(query)}
-          />
-        )}
-        <div className="source-note">
-          <span>Resolver: Google Public DNS (DoH)</span>
-          <span>·</span>
-          <span>
-            {mode === 'compare'
-              ? 'Compareは2つの観測結果を同じDNS名前空間に投影した学習モデルです。'
-              : 'Storyは観測したレコードから再構成した学習モデルです。実際のパケット順序ではありません。'}
-          </span>
-        </div>
-      </section>
+      {storyMode ? (
+        <>
+          <section className="grid grid-cols-[minmax(0,1fr)_minmax(360px,.72fr)] items-center gap-3 max-[900px]:grid-cols-1 max-[900px]:gap-1.5" aria-label="Story controls">
+            <QueryBar
+              value={query}
+              loading={loading}
+              onChange={setQuery}
+              onSubmit={() => void runExploration(query)}
+            />
+            <LearningModeNav
+              compact
+              mode={mode}
+              onStory={enterStory}
+              onCompare={enterCompare}
+              onExplore={enterExplore}
+            />
+          </section>
 
-      {visibleError && (
-        <section className="error-strip" role="alert">
-          <strong>{mode === 'compare' ? '比較できませんでした。' : '探索できませんでした。'}</strong>
-          <span>{visibleError}</span>
-          <button
-            type="button"
-            onClick={() => mode === 'compare'
-              ? void runComparison(compareLeft, compareRight)
-              : void runExploration(query)}
-          >
-            再試行
-          </button>
-        </section>
-      )}
-
-      <nav className="mb-3 grid grid-cols-3 gap-2" aria-label="DNS learning mode">
-        <ModeButton
-          active={mode === 'story'}
-          title="Story"
-          description="なぜ次へ進むか"
-          onClick={() => {
-            setMode('story');
-            setPlaying(false);
-          }}
-        />
-        <ModeButton
-          active={mode === 'compare'}
-          title="Compare"
-          description="どこで責任が分かれるか"
-          onClick={enterCompare}
-        />
-        <ModeButton
-          active={mode === 'explore'}
-          title="Explore"
-          description="NS / SOA / Answerを見る"
-          onClick={() => {
-            setMode('explore');
-            setPlaying(false);
-          }}
-        />
-      </nav>
-
-      {mode === 'compare' ? (
-        <section className="compare-workspace" aria-busy={compareLoading}>
-          {compareLoading && <CompareLoadingState />}
-          {!compareLoading && comparison && <DnsCompare comparison={comparison} />}
-          {!compareLoading && !comparison && !compareError && (
-            <p className="empty-state p-8">2つのドメインを指定してDNS責任の分岐を比較してください。</p>
+          {error ? (
+            <section className="error-strip" role="alert">
+              <strong>探索できませんでした。</strong>
+              <span>{error}</span>
+              <button type="button" onClick={() => void runExploration(query)}>再試行</button>
+            </section>
+          ) : loading || !exploration ? (
+            <section className="story-theater story-loading" aria-busy="true">
+              <LoadingState />
+            </section>
+          ) : (
+            <DnsStory
+              steps={story}
+              activeIndex={storyIndex}
+              playing={playing}
+              complete={storyComplete}
+              feedback={storyFeedback}
+              onSelectActor={handleStoryActor}
+              onBack={backStory}
+              onTogglePlay={() => setPlaying((current) => !current)}
+              onReplay={resetStory}
+              onExplore={enterExplore}
+            />
           )}
-        </section>
+        </>
       ) : (
-        <section className="workspace" data-mode={mode} aria-busy={loading}>
-          <div className="canvas-panel">
-            <div className="canvas-header">
-              <div>
-                <span className="canvas-label">{mode === 'story' ? 'RESOLUTION PATH' : 'DNS NAMESPACE'}</span>
-                <strong>{exploration?.hostname ?? 'Resolving…'}</strong>
-              </div>
-              {exploration && (
-                <div className="canvas-stats" role="status" aria-label={mode === 'story' ? 'Story進行状況' : '探索情報'}>
-                  {mode === 'story' ? (
-                    <>
-                      <span>step {Math.min(storyIndex + 1, story.length)} / {story.length}</span>
-                      <span>explanatory</span>
-                    </>
-                  ) : (
-                    <>
+        <>
+          <section className="hero" aria-labelledby="page-title">
+            <div>
+              <p className="hero-label">See what happens before a connection begins.</p>
+              <h1 id="page-title">
+                <span className="max-[560px]:block">名前解決を、</span>
+                <span className="max-[560px]:block">役割のバトン</span>
+                <span className="max-[560px]:block">として見る。</span>
+              </h1>
+              <p className="hero-copy">
+                {mode === 'compare'
+                  ? '2つの名前を同じDNS階層に重ねると、どこまで責任を共有し、どの委任から別々になるのかが見えてきます。'
+                  : '実際のDNSレコードと名前空間を直接選び、NS / SOA / Answerの詳細を掘り下げます。'}
+              </p>
+            </div>
+            {mode === 'compare' ? (
+              <DnsCompareQuery
+                left={compareLeft}
+                right={compareRight}
+                loading={compareLoading}
+                onLeftChange={(value) => changeCompareInput('left', value)}
+                onRightChange={(value) => changeCompareInput('right', value)}
+                onSubmit={() => void runComparison(compareLeft, compareRight)}
+              />
+            ) : (
+              <QueryBar
+                value={query}
+                loading={loading}
+                onChange={setQuery}
+                onSubmit={() => void runExploration(query)}
+              />
+            )}
+            <div className="source-note">
+              <span>Resolver: Google Public DNS (DoH)</span>
+              <span>·</span>
+              <span>
+                {mode === 'compare'
+                  ? 'Compareは2つの観測結果を同じDNS名前空間に投影した学習モデルです。'
+                  : 'Exploreは観測したレコードを表示し、名前空間の階層は観測結果から再構成します。'}
+              </span>
+            </div>
+          </section>
+
+          {visibleError && (
+            <section className="error-strip" role="alert">
+              <strong>{mode === 'compare' ? '比較できませんでした。' : '探索できませんでした。'}</strong>
+              <span>{visibleError}</span>
+              <button
+                type="button"
+                onClick={() => mode === 'compare'
+                  ? void runComparison(compareLeft, compareRight)
+                  : void runExploration(query)}
+              >
+                再試行
+              </button>
+            </section>
+          )}
+
+          <LearningModeNav
+            mode={mode}
+            onStory={enterStory}
+            onCompare={enterCompare}
+            onExplore={enterExplore}
+          />
+
+          {mode === 'compare' ? (
+            <section className="compare-workspace" aria-busy={compareLoading}>
+              {compareLoading && <CompareLoadingState />}
+              {!compareLoading && comparison && <DnsCompare comparison={comparison} />}
+              {!compareLoading && !comparison && !compareError && (
+                <p className="empty-state p-8">2つのドメインを指定してDNS責任の分岐を比較してください。</p>
+              )}
+            </section>
+          ) : (
+            <section className="workspace" data-mode="explore" aria-busy={loading}>
+              <div className="canvas-panel">
+                <div className="canvas-header">
+                  <div>
+                    <span className="canvas-label">DNS NAMESPACE</span>
+                    <strong>{exploration?.hostname ?? 'Resolving…'}</strong>
+                  </div>
+                  {exploration && (
+                    <div className="canvas-stats" role="status" aria-label="探索情報">
                       <span>{exploration.stages.length} steps</span>
                       <span>{Math.round(exploration.elapsedMs)} ms</span>
-                    </>
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {mode === 'story' && exploration && (
-              <DnsStoryRoute steps={story} activeIndex={storyIndex} />
-            )}
+                <div className="canvas-body">
+                  {loading && <LoadingState />}
+                  {!loading && exploration && (
+                    <DnsPath exploration={exploration} selection={selection} onSelect={selectFromCanvas} />
+                  )}
+                  {!loading && !exploration && !error && (
+                    <p className="empty-state">URLまたはドメインを入力してDNSを探索してください。</p>
+                  )}
+                </div>
+              </div>
 
-            <div className="canvas-body">
-              {loading && <LoadingState />}
-              {!loading && exploration && (
-                <DnsPath exploration={exploration} selection={selection} onSelect={selectFromCanvas} />
-              )}
-              {!loading && !exploration && !error && (
-                <p className="empty-state">URLまたはドメインを入力してDNSを探索してください。</p>
-              )}
-            </div>
-          </div>
+              <div className="inspector-panel">
+                {exploration ? (
+                  <DnsInspector exploration={exploration} selection={selection} />
+                ) : (
+                  <aside className="inspector inspector-placeholder">
+                    <div className="inspector-kicker">LEARN</div>
+                    <h2>{loading ? 'DNSを問い合わせています' : 'DNSを探索'}</h2>
+                    <p className="inspector-lead">Exploreでは各NS / SOA / Answer recordを直接確認できます。</p>
+                  </aside>
+                )}
+              </div>
+            </section>
+          )}
 
-          <div className="inspector-panel">
-            {exploration ? (
-              mode === 'story' ? (
-                <DnsStory
-                  steps={story}
-                  activeIndex={storyIndex}
-                  playing={playing}
-                  onPrevious={() => {
-                    setPlaying(false);
-                    setStoryIndex((current) => Math.max(0, current - 1));
-                  }}
-                  onNext={() => {
-                    setPlaying(false);
-                    setStoryIndex((current) => Math.min(story.length - 1, current + 1));
-                  }}
-                  onTogglePlay={toggleStoryPlayback}
-                />
-              ) : (
-                <DnsInspector exploration={exploration} selection={selection} />
-              )
-            ) : (
-              <aside className="inspector inspector-placeholder">
-                <div className="inspector-kicker">LEARN</div>
-                <h2>{loading ? 'DNSを問い合わせています' : 'DNSを探索'}</h2>
-                <p className="inspector-lead">Storyでは名前解決の因果関係を、Exploreでは各レコードの詳細を確認できます。</p>
-              </aside>
-            )}
-          </div>
-        </section>
+          <footer className="footer-note">
+            <span>Internet Anatomy / DNS</span>
+            <span>問い合わせるホスト名はGoogle Public DNSへ送信されます。アプリ自身は履歴を保存しません。</span>
+          </footer>
+        </>
       )}
-
-      <footer className="footer-note">
-        <span>Internet Anatomy / DNS</span>
-        <span>問い合わせるホスト名はGoogle Public DNSへ送信されます。アプリ自身は履歴を保存しません。</span>
-      </footer>
     </main>
+  );
+}
+
+function LearningModeNav({
+  compact = false,
+  mode,
+  onStory,
+  onCompare,
+  onExplore,
+}: {
+  compact?: boolean;
+  mode: WorkspaceMode;
+  onStory: () => void;
+  onCompare: () => void;
+  onExplore: () => void;
+}) {
+  return (
+    <nav className={compact ? 'grid grid-cols-3 gap-1.5' : 'mb-3 grid grid-cols-3 gap-2'} aria-label="DNS learning mode">
+      <ModeButton active={mode === 'story'} title="Story" description="触って因果を理解" onClick={onStory} />
+      <ModeButton active={mode === 'compare'} title="Compare" description="責任の分岐を比較" onClick={onCompare} />
+      <ModeButton active={mode === 'explore'} title="Explore" description="実データを掘る" onClick={onExplore} />
+    </nav>
   );
 }
 
@@ -363,9 +420,9 @@ function ModeButton({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className="min-w-0 border border-[var(--color-ink-700)] bg-[var(--color-ink-900)] px-4 py-3 text-left aria-pressed:border-[var(--color-signal)] aria-pressed:bg-[color:rgb(130_233_208_/_6%)]"
+      className="min-w-0 border border-[var(--color-ink-700)] bg-[var(--color-ink-900)] px-4 py-3 text-left aria-pressed:border-[var(--color-signal)] aria-pressed:bg-[color:rgb(130_233_208_/_6%)] max-[560px]:px-2 max-[560px]:py-2 max-[560px]:text-center"
     >
-      <strong className="block text-[12px] font-semibold">{title}</strong>
+      <strong className="block text-[12px] font-semibold max-[560px]:text-[10px]">{title}</strong>
       <span className="mt-1 block text-[10px] text-[var(--color-paper-400)] max-[560px]:hidden">{description}</span>
     </button>
   );
