@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DnsCacheLab } from './components/DnsCacheLab';
 import { DnsCompare, DnsCompareQuery } from './components/DnsCompare';
 import { DnsInspector } from './components/DnsInspector';
 import { DnsPath, recordKey, type ExplorerSelection } from './components/DnsPath';
@@ -8,7 +9,7 @@ import { buildDnsComparison, type DnsComparison } from './lib/compare.ts';
 import { exploreDns, type DnsExploration } from './lib/dns';
 import { buildDnsStory, type DnsStoryStep, type StoryActor } from './lib/story.ts';
 
-type WorkspaceMode = 'story' | 'compare' | 'explore';
+type WorkspaceMode = 'story' | 'compare' | 'lab' | 'explore';
 
 export function App() {
   const [query, setQuery] = useState('google.com');
@@ -162,6 +163,10 @@ export function App() {
   };
 
   const enterStory = () => setMode('story');
+  const enterLab = () => {
+    setMode('lab');
+    setPlaying(false);
+  };
   const enterExplore = () => {
     setMode('explore');
     setPlaying(false);
@@ -204,7 +209,7 @@ export function App() {
               onChange={setQuery}
               onSubmit={() => void runExploration(query)}
             />
-            <LearningModeNav compact mode={mode} onStory={enterStory} onCompare={enterCompare} onExplore={enterExplore} />
+            <LearningModeNav compact mode={mode} onStory={enterStory} onCompare={enterCompare} onLab={enterLab} onExplore={enterExplore} />
           </section>
 
           {error ? (
@@ -239,14 +244,26 @@ export function App() {
             <div>
               <p className="hero-label">See what happens before a connection begins.</p>
               <h1 id="page-title">
-                <span className="max-[560px]:block">名前解決を、</span>
-                <span className="max-[560px]:block">役割のバトン</span>
-                <span className="max-[560px]:block">として見る。</span>
+                {mode === 'lab' ? (
+                  <>
+                    <span className="max-[560px]:block">TTLを進めると、</span>
+                    <span className="max-[560px]:block">必要な経路が</span>
+                    <span className="max-[560px]:block">変わっていく。</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="max-[560px]:block">名前解決を、</span>
+                    <span className="max-[560px]:block">役割のバトン</span>
+                    <span className="max-[560px]:block">として見る。</span>
+                  </>
+                )}
               </h1>
               <p className="hero-copy">
                 {mode === 'compare'
                   ? '2つの名前を同じDNS階層に重ねると、どこまで責任を共有し、どの委任から別々になるのかが見えてきます。'
-                  : '実際のDNSレコードと名前空間を直接選び、NS / SOA / Answerの詳細を掘り下げます。'}
+                  : mode === 'lab'
+                    ? '観測したTTLを種にしたローカルシミュレーションで、再問い合わせがcacheによりどこまで短縮されるかを動かして確かめます。'
+                    : '実際のDNSレコードと名前空間を直接選び、NS / SOA / Answerの詳細を掘り下げます。'}
               </p>
             </div>
             {mode === 'compare' ? (
@@ -266,7 +283,9 @@ export function App() {
               <span>·</span>
               <span>{mode === 'compare'
                 ? 'Compareは2つの観測結果を同じDNS名前空間に投影した学習モデルです。'
-                : 'Exploreは観測したレコードを表示し、名前空間の階層は観測結果から再構成します。'}</span>
+                : mode === 'lab'
+                  ? 'Labは観測したTTLを初期値にしたローカルシミュレーションです。実Resolver cacheの観測ではありません。'
+                  : 'Exploreは観測したレコードを表示し、名前空間の階層は観測結果から再構成します。'}</span>
             </div>
           </section>
 
@@ -282,7 +301,7 @@ export function App() {
             </section>
           )}
 
-          <LearningModeNav mode={mode} onStory={enterStory} onCompare={enterCompare} onExplore={enterExplore} />
+          <LearningModeNav mode={mode} onStory={enterStory} onCompare={enterCompare} onLab={enterLab} onExplore={enterExplore} />
 
           {mode === 'compare' ? (
             <section className="compare-workspace" aria-busy={compareLoading}>
@@ -290,6 +309,14 @@ export function App() {
               {!compareLoading && comparison && <DnsCompare comparison={comparison} />}
               {!compareLoading && !comparison && !compareError && (
                 <p className="empty-state p-8">2つのドメインを指定してDNS責任の分岐を比較してください。</p>
+              )}
+            </section>
+          ) : mode === 'lab' ? (
+            <section aria-busy={loading}>
+              {loading && <LoadingState />}
+              {!loading && exploration && <DnsCacheLab exploration={exploration} />}
+              {!loading && !exploration && !error && (
+                <p className="empty-state p-8">ドメインを探索してCache / TTL Labを開始してください。</p>
               )}
             </section>
           ) : (
@@ -347,18 +374,21 @@ function LearningModeNav({
   mode,
   onStory,
   onCompare,
+  onLab,
   onExplore,
 }: {
   compact?: boolean;
   mode: WorkspaceMode;
   onStory: () => void;
   onCompare: () => void;
+  onLab: () => void;
   onExplore: () => void;
 }) {
   return (
-    <nav className={compact ? 'grid grid-cols-3 gap-1.5' : 'mb-3 grid grid-cols-3 gap-2'} aria-label="DNS learning mode">
+    <nav className={compact ? 'grid grid-cols-4 gap-1.5' : 'mb-3 grid grid-cols-4 gap-2'} aria-label="DNS learning mode">
       <ModeButton active={mode === 'story'} title="Story" description="触って因果を理解" onClick={onStory} />
       <ModeButton active={mode === 'compare'} title="Compare" description="責任の分岐を比較" onClick={onCompare} />
+      <ModeButton active={mode === 'lab'} title="Lab" description="TTLを時間で動かす" onClick={onLab} />
       <ModeButton active={mode === 'explore'} title="Explore" description="実データを掘る" onClick={onExplore} />
     </nav>
   );
@@ -375,9 +405,9 @@ function ModeButton({ active, title, description, onClick }: {
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className="min-w-0 border border-[var(--color-ink-700)] bg-[var(--color-ink-900)] px-4 py-3 text-left aria-pressed:border-[var(--color-signal)] aria-pressed:bg-[color:rgb(130_233_208_/_6%)] max-[560px]:px-2 max-[560px]:py-2 max-[560px]:text-center"
+      className="min-w-0 border border-[var(--color-ink-700)] bg-[var(--color-ink-900)] px-4 py-3 text-left aria-pressed:border-[var(--color-signal)] aria-pressed:bg-[color:rgb(130_233_208_/_6%)] max-[560px]:px-1.5 max-[560px]:py-2 max-[560px]:text-center"
     >
-      <strong className="block text-[12px] font-semibold max-[560px]:text-[10px]">{title}</strong>
+      <strong className="block text-[12px] font-semibold max-[560px]:text-[9px]">{title}</strong>
       <span className="mt-1 block text-[10px] text-[var(--color-paper-400)] max-[560px]:hidden">{description}</span>
     </button>
   );
