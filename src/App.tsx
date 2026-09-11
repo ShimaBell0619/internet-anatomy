@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DnsInspector } from './components/DnsInspector';
 import { DnsPath, recordKey, type ExplorerSelection } from './components/DnsPath';
 import { DnsStory } from './components/DnsStory';
+import { DnsStoryRoute } from './components/DnsStoryRoute';
 import { QueryBar } from './components/QueryBar';
 import { exploreDns, type DnsExploration } from './lib/dns';
 import { buildDnsStory } from './lib/story.ts';
@@ -169,7 +170,7 @@ export function App() {
         </button>
       </nav>
 
-      <section className="workspace" aria-busy={loading}>
+      <section className="workspace" data-mode={mode} aria-busy={loading}>
         <div className="canvas-panel">
           <div className="canvas-header">
             <div>
@@ -192,6 +193,10 @@ export function App() {
               </div>
             )}
           </div>
+
+          {mode === 'story' && exploration && (
+            <DnsStoryRoute steps={story} activeIndex={storyIndex} />
+          )}
 
           <div className="canvas-body">
             {loading && <LoadingState />}
