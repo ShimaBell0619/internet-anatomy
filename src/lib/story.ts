@@ -21,7 +21,7 @@ export function buildDnsStory(exploration: DnsExploration): DnsStoryStep[] {
   const delegatedStages = stages
     .map((stage, index) => ({ stage, index }))
     .filter(({ stage, index }) => index > tldIndex && stage.nameServers.length > 0);
-  const authoritative = delegatedStages.at(-1) ?? deepestObservedZone(stages);
+  const authoritative = delegatedStages.at(-1);
   const firstAnswer = exploration.answerRecords[0];
 
   const steps: DnsStoryStep[] = [
@@ -52,7 +52,7 @@ export function buildDnsStory(exploration: DnsExploration): DnsStoryStep[] {
       learned: tldLesson(stages[tldIndex], authoritative?.stage),
       whyNext: authoritative
         ? `${authoritative.stage.fqdn} の権威情報へ進みます。`
-        : '観測できた最も具体的なDNS情報へ進みます。',
+        : 'この観測では下位のNS委任点を確認できないため、得られた最終回答をそのまま確認します。',
       focus: { kind: 'stage', index: tldIndex },
     },
   ];
@@ -112,15 +112,6 @@ export function buildDnsStory(exploration: DnsExploration): DnsStoryStep[] {
   });
 
   return steps;
-}
-
-function deepestObservedZone(stages: NamespaceStage[]) {
-  for (let index = stages.length - 1; index >= 0; index -= 1) {
-    if (stages[index]?.nameServers.length) {
-      return { stage: stages[index], index };
-    }
-  }
-  return stages[0] ? { stage: stages[0], index: 0 } : undefined;
 }
 
 function rootLesson(root: NamespaceStage | undefined, tld: NamespaceStage | undefined): string {
