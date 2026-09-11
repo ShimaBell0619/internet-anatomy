@@ -209,18 +209,18 @@ function ActorButton({ actor, guided, onClick }: { actor: StoryActor; guided: bo
       onClick={onClick}
       aria-label={`${actor.role} ${actor.name}`}
     >
-      <ActorIdentity actor={actor} />
+      <ActorIdentity actor={actor} compact />
       {guided && <span className="absolute right-2 bottom-1.5 font-mono text-[7px] tracking-[.08em] text-[var(--color-signal)] max-[560px]:hidden">AUTO NEXT</span>}
     </button>
   );
 }
 
-function ActorIdentity({ actor }: { actor: StoryActor }) {
+function ActorIdentity({ actor, compact = false }: { actor: StoryActor; compact?: boolean }) {
   return (
     <span className="grid min-w-0 gap-1 max-[560px]:gap-0.5">
-      <small className="min-w-0 break-words font-mono text-[8px] tracking-[.1em] text-[var(--color-signal)] max-[560px]:text-[6px] max-[560px]:tracking-[.06em]">{actor.role}</small>
+      <small className="min-w-0 break-words font-mono text-[8px] tracking-[.1em] text-[var(--color-signal)] max-[560px]:text-[7px] max-[560px]:tracking-[.05em]">{actor.role}</small>
       <strong className="min-w-0 break-words font-mono text-[clamp(10px,1.5vw,18px)] leading-tight font-medium text-[var(--color-paper-50)]">{actor.name}</strong>
-      <span className="min-w-0 break-words font-mono text-[9px] leading-[1.45] text-[var(--color-paper-400)] max-[560px]:text-[7px] max-[560px]:leading-[1.3]">{actor.detail}</span>
+      <span className={`min-w-0 break-words font-mono text-[9px] leading-[1.45] text-[var(--color-paper-400)] max-[560px]:text-[7px] max-[560px]:leading-[1.3] ${compact ? 'max-[560px]:hidden' : ''}`}>{actor.detail}</span>
     </span>
   );
 }
