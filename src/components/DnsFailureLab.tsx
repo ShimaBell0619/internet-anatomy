@@ -38,7 +38,7 @@ export function DnsFailureLab({ hostname }: { hostname: string }) {
           <span className="failure-kicker">SIMULATED RESOLUTION PATH</span>
           <ol className="failure-route" data-scenario={scenario} aria-label={`Break DNS route: ${model.status}`}>
             {model.nodes.map((item, index) => (
-              <li key={`${scenario}-${index}-${item.role}-${item.name}`}>
+              <li key={`${scenario}-${item.role}-${item.name}`}>
                 <div className="failure-node" data-tone={item.tone}>
                   <span>{item.role}</span>
                   <strong>{item.name}</strong>
