@@ -10,6 +10,14 @@ const TYPE_NAMES: Record<number, string> = {
   28: 'AAAA',
 };
 
+const DNS_STATUS_NAMES: Record<number, string> = {
+  1: 'FORMERR',
+  2: 'SERVFAIL',
+  3: 'NXDOMAIN',
+  4: 'NOTIMP',
+  5: 'REFUSED',
+};
+
 export interface GoogleDnsRecord {
   name: string;
   type: number;
@@ -76,6 +84,19 @@ export async function queryGoogleDns(
   return (await response.json()) as GoogleDnsResponse;
 }
 
+export function assertDnsResponseStatus(
+  response: GoogleDnsResponse,
+  context: string,
+  allowNxDomain = false,
+): void {
+  if (response.Status === 0 || (allowNxDomain && response.Status === 3)) {
+    return;
+  }
+
+  const statusName = DNS_STATUS_NAMES[response.Status] ?? 'UNKNOWN';
+  throw new Error(`${context} のDNS応答が ${statusName} (${response.Status}) でした。`);
+}
+
 export function extractRecords(response: GoogleDnsResponse): DnsRecord[] {
   return (response.Answer ?? []).map((record) => ({
     name: record.name,
@@ -94,6 +115,10 @@ export async function exploreDns(input: string, signal?: AbortSignal): Promise<D
     candidates.map((name) => queryGoogleDns(name, 'NS', signal)),
   );
 
+  nsResponses.forEach((response, index) => {
+    assertDnsResponseStatus(response, `${toFqdn(candidates[index])} NS`, true);
+  });
+
   const nsByCandidate = nsResponses.map((response) =>
     extractRecords(response).filter((record) => record.type === 'NS'),
   );
@@ -104,7 +129,9 @@ export async function exploreDns(input: string, signal?: AbortSignal): Promise<D
         return null;
       }
       try {
-        return await queryGoogleDns(name, 'SOA', signal);
+        const response = await queryGoogleDns(name, 'SOA', signal);
+        assertDnsResponseStatus(response, `${toFqdn(name)} SOA`);
+        return response;
       } catch (error) {
         if (signal?.aborted) {
           throw error;
@@ -141,9 +168,19 @@ export async function exploreDns(input: string, signal?: AbortSignal): Promise<D
     queryGoogleDns(hostname, 'CNAME', signal),
   ]);
 
-  if ([aResponse, aaaaResponse, cnameResponse].every((response) => response.Status === 3)) {
+  const answerResponses = [
+    ['A', aResponse],
+    ['AAAA', aaaaResponse],
+    ['CNAME', cnameResponse],
+  ] as const;
+
+  if (answerResponses.every(([, response]) => response.Status === 3)) {
     throw new Error(`${hostname} はDNS上に存在しません (NXDOMAIN)。`);
   }
+
+  answerResponses.forEach(([type, response]) => {
+    assertDnsResponseStatus(response, `${toFqdn(hostname)} ${type}`);
+  });
 
   const answerRecords = deduplicateRecords([
     ...extractRecords(aResponse),
