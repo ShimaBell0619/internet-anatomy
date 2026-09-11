@@ -95,7 +95,8 @@ export function DnsCacheLab({ exploration }: { exploration: DnsExploration }) {
         </aside>
       </div>
 
-      <div className="cache-controls" role="group" aria-label="Cache Lab controls">
+      <fieldset className="cache-controls">
+        <legend className="sr-only">Cache Lab controls</legend>
         <button
           type="button"
           className="cache-primary-action"
@@ -112,7 +113,7 @@ export function DnsCacheLab({ exploration }: { exploration: DnsExploration }) {
         <button type="button" onClick={() => setState(createCacheLabState())}>
           リセット
         </button>
-      </div>
+      </fieldset>
 
       <p className="cache-disclosure">
         SIMULATION · Google Public DNSの実cacheを観測しているわけではありません。表示中のTTLを種にしたローカル状態模型で、経路の短縮はDNS cacheの概念を説明するものです。
