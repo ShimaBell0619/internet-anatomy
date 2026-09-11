@@ -143,7 +143,7 @@ export function App() {
         </section>
       )}
 
-      <nav className="mb-3 flex flex-wrap items-stretch gap-2" aria-label="DNS learning mode">
+      <nav className="mb-3 grid grid-cols-2 gap-2" aria-label="DNS learning mode">
         <button
           type="button"
           aria-pressed={mode === 'story'}
@@ -151,7 +151,7 @@ export function App() {
             setMode('story');
             setPlaying(false);
           }}
-          className="min-w-36 border border-[var(--color-ink-700)] bg-[var(--color-ink-900)] px-4 py-3 text-left aria-pressed:border-[var(--color-signal)] aria-pressed:bg-[color:rgb(130_233_208_/_6%)]"
+          className="min-w-0 border border-[var(--color-ink-700)] bg-[var(--color-ink-900)] px-4 py-3 text-left aria-pressed:border-[var(--color-signal)] aria-pressed:bg-[color:rgb(130_233_208_/_6%)]"
         >
           <strong className="block text-[12px] font-semibold">Story</strong>
           <span className="mt-1 block text-[10px] text-[var(--color-paper-400)]">なぜ次へ進むか</span>
@@ -163,7 +163,7 @@ export function App() {
             setMode('explore');
             setPlaying(false);
           }}
-          className="min-w-36 border border-[var(--color-ink-700)] bg-[var(--color-ink-900)] px-4 py-3 text-left aria-pressed:border-[var(--color-signal)] aria-pressed:bg-[color:rgb(130_233_208_/_6%)]"
+          className="min-w-0 border border-[var(--color-ink-700)] bg-[var(--color-ink-900)] px-4 py-3 text-left aria-pressed:border-[var(--color-signal)] aria-pressed:bg-[color:rgb(130_233_208_/_6%)]"
         >
           <strong className="block text-[12px] font-semibold">Explore</strong>
           <span className="mt-1 block text-[10px] text-[var(--color-paper-400)]">NS / SOA / Answerを見る</span>
