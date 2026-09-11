@@ -61,7 +61,7 @@ export function DnsStory({
         <p className="mt-2 mb-0 text-[12px] leading-7 text-[var(--color-paper-200)]">{step.whyNext}</p>
       </section>
 
-      <div className="mt-8 grid grid-cols-3 gap-2" aria-label="Story controls">
+      <div className="mt-8 grid grid-cols-3 gap-2" role="group" aria-label="Story controls">
         <button
           type="button"
           className="min-h-11 border border-[var(--color-ink-700)] bg-transparent px-3 text-[12px] disabled:cursor-not-allowed disabled:opacity-35"
