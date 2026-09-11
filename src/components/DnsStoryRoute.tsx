@@ -1,4 +1,5 @@
 import type { DnsStoryStep } from '../lib/story.ts';
+import '../story.css';
 
 interface DnsStoryRouteProps {
   steps: DnsStoryStep[];
