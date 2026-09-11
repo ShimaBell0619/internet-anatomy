@@ -11,86 +11,92 @@ omitted:
 
 ## Overview
 
-Design direction: **a quiet network microscope where real DNS observations become causal stories and comparison exposes the exact point where responsibility branches.**
+Design direction: **a quiet protocol theater where real DNS observations become directly manipulable responsibility handoffs, while Compare exposes where two names branch.**
 
-Story should make one name's responsibility handoff understandable. Compare should make two names feel like specimens placed under the same lens: shared DNS ancestry dominates first, then one explicit divergence point, then two name-specific branches. Explore remains the detailed inspection surface.
+Story is not a vertically stacked article. One scene should keep the current question, current responsibility holder, reachable DNS actors, and immediate feedback in one visual context. The learner advances by touching the model rather than paging through explanation. Compare remains a contrastive full-width lens. Explore remains the detailed inspection surface.
 
-Avoid generic dashboard composition. Internet Anatomy is an exploration/learning surface, not a KPI console: no equal metric-card grid, marketing hero, decorative icon boxes, or repeated pills without protocol meaning.
+Avoid generic dashboard composition. Internet Anatomy is an exploration/learning surface, not a KPI console: no equal metric-card grid, marketing hero in the primary Story flow, decorative icon boxes, or repeated pills without protocol meaning.
 
 ## Colors
 
 - `ink-950` / `ink-900` / `ink-850`: depth of the exploration workspace; dark surfaces reduce competition with protocol data.
 - `paper-50` / `paper-200` / `paper-400`: primary, secondary, and metadata text.
-- `signal`: active/shared path, focus, current Story step, and observed delegation emphasis.
-- `warm`: final answer records and Compare divergence; distinguishes branch/answer semantics without relying on color alone.
-- `danger`: explicit query/error state only.
+- `signal`: active/shared path, current holder/actor focus, and observed delegation emphasis.
+- `warm`: final answer records, Compare divergence, and explanatory “not yet” feedback; never the sole signal for correctness or state.
+- `danger`: explicit query/error state only, not a learner choosing an actor too early.
 - Dark appearance is the initial product decision. Accent glow is limited to active/temporal network state and is not general decoration.
 
 ## Typography
 
 - Sans-serif carries Japanese explanation and interface text.
-- Monospace carries domain names, record types, TTL, protocol metadata, stage labels, Story route labels, and Compare branch labels.
-- The current Story question or Compare responsibility statement has higher visual weight than supporting explanation.
+- Monospace carries domain names, record types, TTL, protocol metadata, actor roles, Story scene metadata, and Compare branch labels.
+- In Story, the current action/question dominates; explanatory feedback is concise and secondary.
 - Do not ship a webfont solely for styling; use system/CJK-capable fallbacks and validate Japanese wrapping in rendered review.
 
 ## Layout
 
-- Wide Story/Explore screens use a primary DNS path canvas plus a narrower contextual panel.
-- Story is the default mode; the contextual panel owns the current question, learned fact, why-next explanation, progress, and playback controls.
-- Explore reuses the same canvas and contextual panel for direct record/stage inspection instead of creating a second dashboard.
-- Compare uses the full workspace width. It must read top-to-bottom as shared trunk → explicit divergence → two domain branches, not as two unrelated side-by-side result cards.
-- Compare inputs are exactly two named fields. The default pair is immediately useful, but comparison runs only through the existing explicit browser-to-resolver boundary.
-- At narrow widths Compare preserves shared trunk and divergence first, then stacks domain branches in reading order. Branch content must not force horizontal scrolling.
-- Query input stays above the workspace and remains the dominant input action. Story/Compare/Explore is a compact learning-mode choice, not application navigation chrome.
+- Story uses a mostly viewport-fixed **protocol theater** instead of the normal document flow. Its normal scene should not require page-level vertical scrolling at the target desktop/mobile review heights.
+- Story chrome is intentionally compressed: topbar, hostname query, and Story/Compare/Explore mode choice must not displace the learning stage.
+- A Story scene reads as **current holder → explanatory handoff → reachable actors**, with the action question above and contextual feedback below. These regions remain visible together.
+- Story may hide raw records and secondary facts. Explore owns detailed NS/SOA/Answer inspection and may use document scrolling when needed.
+- Story target actors are visible controls, not invisible hotspots. Click/tap/keyboard provide the complete progression path; drag-and-drop is not required.
+- Compare uses the full workspace width and reads top-to-bottom as shared trunk → explicit divergence → two domain branches, not as two unrelated result cards.
+- At narrow widths, Story rearranges the same scene rather than stacking a long article. Current holder and target actors remain above the feedback boundary without horizontal scrolling.
+- Compare and Explore retain their existing responsive reading order rather than being forced into the Story viewport constraint.
 
 ## Elevation & Depth
 
-- Use borders, surface tone, and a subtle coordinate grid to separate the learning canvas from surrounding chrome.
-- Avoid card-per-stage elevation. DNS nodes live in one continuous namespace rather than independent floating surfaces.
-- In Compare, line/rail continuity should express shared ancestry and branching more strongly than containers do.
-- The Story/Explore contextual panel may be sticky on wide screens because it represents the current selection or Story step.
+- Use borders, surface tone, and a subtle coordinate grid to create one continuous technical stage.
+- Avoid card-per-step elevation. Story actors are actionable nodes inside one protocol model, not independent content cards.
+- Compare line/rail continuity should express shared ancestry and branching more strongly than containers do.
+- Explore may retain its canvas/inspector separation because selection context benefits from a persistent detail surface.
 
 ## Shapes
 
-- Use restrained small radii for inputs and data rows.
-- Namespace stages are rectilinear, technical markers; avoid generic pill/badge styling.
+- Use restrained small radii for inputs and actionable actor nodes.
+- Namespace/actor nodes are rectilinear technical markers; avoid generic pill/badge styling.
 - Circular motion is reserved for a real loading/observation state.
 
 ## Components
 
-- Native input/button/progress semantics are sufficient for current controls; do not add a primitive dependency until behavior requires it.
-- Product semantic components own Query Bar, DNS Path, Stage Node, Answer Record, Story, Compare, and Inspector behavior.
-- Story state changes must visibly select the corresponding path stage or final answer. Explanation must not advance independently from the main visualization.
-- Directly selecting a path node while Story is active may move the user into Explore so the Story narrative and arbitrary inspection state cannot contradict each other.
+- Native input/button/fieldset semantics are sufficient for current controls; do not add a primitive dependency until behavior requires it.
+- Product semantic components own Query Bar, DNS Path, Story Theater/Actor, Compare, Answer Record, and Inspector behavior.
+- Story interaction semantics come from the pure Story model: current holder, correct next actor, and meaningful premature alternatives. Layout must not decide what is “correct.”
+- A correct actor selection advances the responsibility model and leaves concise **WHAT JUST HAPPENED / WHY NEXT** feedback in the same scene context.
+- A premature actor selection does not create an error state; it keeps the scene in place and explains **WHY NOT YET?**.
+- Auto is a secondary watch mode. It may highlight the next actor, but manual Story must not reveal the answer solely through color or animation.
 - Compare must render from a pure comparison model derived from two current DNS explorations; UI layout must not decide shared ancestry or divergence semantics.
-- Shared/branch meaning must be textual as well as visual. Color and line placement may reinforce meaning but cannot be the only signal.
-- Specialist CSS is explicitly allowed for path/rail/grid/branch visualization because it expresses protocol structure better than generic cards.
-- Loading, error, selected, playing/paused, shared, diverged, empty/NODATA, and successful answer states must be explicit.
+- Shared/branch/interaction meaning must be textual as well as visual. Color and line placement may reinforce meaning but cannot be the only signal.
+- Specialist custom CSS is allowed only where the protocol-stage/rail/handoff visualization materially benefits from it. Routine controls, responsive text, focus, disabled state, field grouping, and button behavior stay with semantic HTML/Tailwind or mature primitives.
+- Loading, error, active actor, explanatory feedback, shared, diverged, empty/NODATA, and successful answer states must be explicit.
 
 ## Motion
 
-- Play advances discrete Story steps; it is not presented as packet timing or measured network duration.
-- Step focus may use short positional/color transitions to orient the eye, but `prefers-reduced-motion` must collapse those transitions.
-- Compare does not animate fabricated packet traffic between branches.
+- Auto advances discrete explanatory Story scenes using local UI time only; it is not DNS latency.
+- Manual interaction should use immediate state change and at most short orientation transitions. The learner should never wait for decorative animation before acting again.
+- `prefers-reduced-motion` must remove nonessential actor/focus transitions.
+- Do not animate fabricated packets between DNS servers. Handoff lines/arrows describe explanatory responsibility, not observed traffic.
 
 ## Do's and Don'ts
 
 ### Do
 
-- Make the current causal question or comparison conclusion agree with the visible DNS structure.
-- Explain each Story transition with “what we learned” and “why next”.
-- In Compare, expose the shared prefix before showing differences; emphasize the first responsibility boundary rather than every record difference equally.
-- Label observed values with textual protocol roles (`ROOT`, `TLD`, `NS`, `A`, `AAAA`, `CNAME`, `TTL`).
-- Keep focus visible and selection/shared/divergence state understandable without color alone.
+- Keep Story question, manipulated actors, and resulting explanation in one visual context.
+- Let protocol semantics drive navigation when a visible DNS actor can represent the next action accessibly.
+- Explain early choices with causal language instead of “wrong answer” language.
+- Make the current holder and selectable actors distinguishable through labels, structure, focus, and text—not color alone.
+- In Compare, expose the shared prefix before differences and emphasize the first responsibility boundary.
 - Preserve real strings and allow long DNS values to wrap.
-- Review 1440px, 390px, and 320px renderings.
+- Review 1440px, 390px, and 320px renderings, including actual viewport height/clipping rather than only width overflow.
 
 ### Don't
 
+- Do not turn Story into a quiz, score loop, streak system, or generic gamified lesson.
+- Do not make a generic Next button the primary progression mechanism when the protocol actor itself can be selected.
+- Do not require drag-and-drop for core progression.
 - Do not imply that Story or Compare is the user's actual recursive resolver trace or a packet capture.
-- Do not let playback or comparison timing imply measured DNS latency.
-- Do not turn Compare into two generic cards with duplicated metrics and no shared hierarchy.
+- Do not let Auto timing imply measured DNS latency.
+- Do not turn actor nodes into decorative cards whose visual weight is unrelated to protocol responsibility.
 - Do not invent an authoritative/delegation zone when downstream NS evidence is missing.
-- Do not add side navigation, KPI cards, user profile chrome, or generic SaaS dashboard structure without a product need.
-- Do not hide explanatory content behind hover-only interactions.
+- Do not rebuild standard inputs, buttons, focus handling, field grouping, or keyboard behavior in specialist CSS/JS simply to look unique.
 - Do not sacrifice readable Japanese explanation to preserve a desktop composition.
