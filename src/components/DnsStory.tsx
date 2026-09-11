@@ -142,7 +142,8 @@ export function DnsStory({
           <p className="mb-2 font-mono text-[9px] tracking-[.1em] text-[var(--color-paper-400)] max-[560px]:mb-1 max-[560px]:text-[7px]">
             次に到達できる相手は？
           </p>
-          <div className="story-target-grid" role="group" aria-label="次に質問または答えを渡す相手">
+          <fieldset className="story-target-grid m-0 border-0 p-0">
+            <legend className="sr-only">次に質問または答えを渡す相手</legend>
             {choices.map((choice) => (
               <ActorButton
                 key={choice.actor.id}
@@ -151,7 +152,7 @@ export function DnsStory({
                 onClick={() => onSelectActor(choice.actor.id)}
               />
             ))}
-          </div>
+          </fieldset>
         </div>
       </div>
 
