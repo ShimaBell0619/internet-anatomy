@@ -92,7 +92,7 @@ export function App() {
               <strong>{exploration?.hostname ?? 'Resolving…'}</strong>
             </div>
             {exploration && (
-              <div className="canvas-stats" aria-label="探索情報">
+              <div className="canvas-stats" role="status" aria-label="探索情報">
                 <span>{exploration.stages.length} steps</span>
                 <span>{Math.round(exploration.elapsedMs)} ms</span>
               </div>
