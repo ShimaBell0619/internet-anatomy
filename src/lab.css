@@ -217,8 +217,7 @@
   font-weight: 500;
 }
 
-.cache-entry[data-valid="true"] > div:first-child strong,
-.cache-entry[data-valid="true"] .cache-entry-ttl strong {
+.cache-entry[data-valid="true"] strong {
   color: var(--color-signal);
 }
 
