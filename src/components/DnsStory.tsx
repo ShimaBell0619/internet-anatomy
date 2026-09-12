@@ -185,7 +185,7 @@ export function DnsStory({
                 <button
                   type="button"
                   onClick={onTryAliasExample}
-                  className="shrink-0 border-0 border-b border-[var(--color-warm)] bg-transparent p-0 font-mono text-[9px] text-[var(--color-warm)] max-[560px]:text-[8px]"
+                  className="min-w-0 max-w-full whitespace-normal break-words border-0 border-b border-[var(--color-warm)] bg-transparent p-0 text-left font-mono text-[9px] leading-[1.45] text-[var(--color-warm)] max-[560px]:text-[8px]"
                 >
                   CNAMEの寄り道を見る · www.github.com
                 </button>
@@ -280,6 +280,9 @@ function StoryDisclosure() {
 }
 
 function extractHostname(steps: DnsStoryStep[]): string {
-  const client = steps[0]?.action.source;
-  return client?.kind === 'client' ? client.detail.replace(/\s*\?$/, '') : 'hostname';
+  const first = steps[0];
+  if (!first) return '';
+  return first.action.source.kind === 'client'
+    ? first.action.source.detail?.replace(/\s*\?$/, '') ?? ''
+    : first.question.split('を')[0] ?? '';
 }

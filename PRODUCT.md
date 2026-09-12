@@ -18,6 +18,7 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 ## 3. Core behaviors
 
 - Accept a URL or hostname and normalize it to a DNS hostname.
+- Reflect the current successful learning entry point in a shareable browser URL: hostname + mode for Story/Lab/Explore, comparison pair for Compare, and Lab subsection where relevant. Invalid URL state must fall back through the same hostname normalization rules rather than bypassing them.
 - Query real public DNS data and distinguish observed data from explanatory reconstruction or simulation.
 - Default to a guided DNS Resolution Story derived from the current exploration result.
 - Present Story as a mostly viewport-fixed protocol theater: the current question, current holder, reachable DNS actors, and immediate feedback stay in one visual context instead of requiring normal page scrolling.
@@ -46,7 +47,7 @@ Internet Anatomy makes invisible Internet infrastructure understandable through 
 
 ## 4. Product constraints
 
-- No authentication or persistence is required for the current learning experience.
+- No authentication or persistence is required for the current learning experience. Shareable URL state is navigation state only and must not become query history or saved progress.
 - DNS queries are sent directly from the user's browser to the documented public DNS-over-HTTPS resolver. The UI must disclose that boundary.
 - Story and Compare are explanatory projections reconstructed from observed DNS data. The app must not claim that either is a packet capture, the user's OS resolver path, or an iterative query performed by the browser.
 - Lab is simulation. It must not claim visibility into Google Public DNS cache contents, real resolver cache age, or actual query paths skipped by that resolver.

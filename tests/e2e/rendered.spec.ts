@@ -38,6 +38,35 @@ test.beforeEach(async ({ page }) => {
   await mockDns(page);
 });
 
+test('share URL opens a normalized Story hostname and round-trips committed state', async ({ page }) => {
+  await page.goto('/?mode=story&host=https%3A%2F%2FWWW.GITHUB.COM%2Fdocs');
+  await expect(page.getByRole('button', { name: /Story/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('探索するURLまたはドメイン')).toHaveValue('www.github.com');
+  await expect(page.getByRole('heading', { name: '最初に質問を渡す相手を選ぶ' })).toBeVisible();
+  await expect.poll(() => new URL(page.url()).search).toBe('?mode=story&host=www.github.com');
+});
+
+test('share URL opens a comparison pair', async ({ page }) => {
+  await page.goto('/?mode=compare&left=google.com&right=github.com');
+  await expect(page.getByRole('button', { name: /Compare/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('比較する1つ目のURLまたはドメイン')).toHaveValue('google.com');
+  await expect(page.getByLabel('比較する2つ目のURLまたはドメイン')).toHaveValue('github.com');
+  await expect(page.getByRole('heading', { name: /com\. までは共通/ })).toBeVisible();
+  await expect.poll(() => new URL(page.url()).search).toBe('?mode=compare&left=google.com&right=github.com');
+});
+
+test('share URL opens Break DNS and invalid URL state falls back safely', async ({ page }) => {
+  await page.goto('/?mode=lab&host=google.com&lab=failure');
+  await expect(page.getByRole('button', { name: /^Lab/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('BREAK DNS · SIMULATION')).toBeVisible();
+  await expect.poll(() => new URL(page.url()).search).toBe('?mode=lab&host=google.com&lab=failure');
+
+  await page.goto('/?mode=unknown&host=localhost&lab=other');
+  await expect(page.getByRole('button', { name: /Story/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('探索するURLまたはドメイン')).toHaveValue('google.com');
+  await expect.poll(() => new URL(page.url()).search).toBe('?mode=story&host=google.com');
+});
+
 test('Story advances by directly activating the next protocol handoff', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
