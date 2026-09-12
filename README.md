@@ -2,6 +2,8 @@
 
 **See what happens behind a URL.** Internet Anatomy is an interactive learning tool that turns real Internet protocol data into an explorable visual model.
 
+**Live:** https://internet-anatomy.vercel.app
+
 The current surface focuses on DNS. Enter one or two hostnames and learn through four complementary modes:
 
 - **Story** — the default interactive protocol theater. Directly activate each reachable DNS handoff and see what changed and why. If the observed answer contains CNAME, Story makes the alias → canonical-name detour explicit before the terminal address.
