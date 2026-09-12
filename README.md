@@ -26,7 +26,21 @@ The current surface focuses on DNS. Enter one or two hostnames and learn through
 - Lets you break only the local DNS model to distinguish NODATA from NXDOMAIN, stop at a missing delegation, or create a finite CNAME loop and see where resolution can no longer advance.
 - Shows Root/TLD/namespace stages, observed NS/SOA data, and final A/AAAA/CNAME records with TTL in Explore.
 - Distinguishes NODATA, NXDOMAIN, DNS protocol failures, and transport errors.
-- Stores no query, comparison, or Lab history in the application.
+- Reflects successful entry state in the browser URL so a hostname/mode, comparison pair, or Lab subsection can be shared directly.
+- Stores no query history, lesson progress, comparison history, or Lab history in the application.
+
+## Shareable entry points
+
+The URL stores only stable entry state—not Story progress, cache clock, or a temporary Break DNS scenario.
+
+```text
+?mode=story&host=www.github.com
+?mode=compare&left=google.com&right=github.com
+?mode=lab&host=google.com&lab=failure
+?mode=explore&host=google.com
+```
+
+Hostnames loaded from URL state are validated through the same normalization path as typed input. Invalid URL state falls back to the product defaults.
 
 > Queried hostnames are sent from your browser to Google Public DNS. Story and Compare are explanatory reconstructions from observed DNS data. Lab is a local simulation seeded by observed values. Story/Lab route graphics, CNAME detour rails, and Auto progression are not packet captures, measured hop timing, reproductions of your operating system's resolver path, or visibility into Google Public DNS cache contents.
 
